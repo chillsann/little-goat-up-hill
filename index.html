@@ -123,7 +123,7 @@
     <div id="gameLevelInfo" style="font-weight:600;color:#6b4f32;font-size:18px;"></div>
     <div class="big-character" id="targetChar">羊</div>
     <div class="group-word-display" id="groupWordDisplay">--</div>
-    <div class="tap-hint">👆 点汉字听发音和组词</div>
+    <div class="tap-hint">👆 点汉字或组词听发音</div>
     <div class="message-box" id="gameMessage">🐑 找找这个字吧！</div>
     <div class="options-row" id="optionsContainer"></div>
     <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
@@ -134,7 +134,7 @@
     <div style="font-size:24px;font-weight:700;color:#b45f06;">🏆 关卡小测验</div>
     <div class="big-character" id="quizTarget">山</div>
     <div class="group-word-display" id="quizGroupWordDisplay">--</div>
-    <div class="tap-hint">👆 点汉字听发音和组词</div>
+    <div class="tap-hint">👆 点汉字或组词听发音</div>
     <div class="message-box" id="quizMessage">🔊 听一听，找一找</div>
     <div class="options-row" id="quizOptions"></div>
     <button class="btn back hidden" id="quizCompleteBtn" style="margin-top:15px;">🎊 测验完成</button>
@@ -153,10 +153,9 @@
       { name: "太阳城堡", emoji: "☀️", words: ["教","育","培","养","保","护","帮","助","关","心","照","顾","学","习","练","复","预","检","查","测","验","考","试","合","格","优","秀","进","步","努","力","认","识","阅","读","理","解","表","达","沟","通","交","流","分","享","作","团","队","朋","友","伙","伴","同","老","师","校","园","室","操","场","图","书","馆","实","验","手","工","绘","画"] }
     ];
 
-    // 所有已收录的汉字集合（用于过滤组词）
     const allChars = new Set(LEVELS.flatMap(l => l.words));
 
-    // ---------- 组词库（仅使用字库中已有的汉字）----------
+    // 组词库（只保留所有字都在字库中的词语）
     const rawWordGroups = {
       "一": ["一个","一天","一起","一二","第一"],
       "二": ["二月","二手","二胡"],
@@ -218,7 +217,6 @@
       "爸": ["爸爸"],
       "妈": ["妈妈"],
       "我": ["我们","我的"],
-      // 第二级及以后补充部分组词，为节省篇幅，以下只列部分示例，实际代码中已内置完整（约300组）
       "水": ["水果","河水","山水","大水"],
       "火": ["火车","火星","大火","火苗"],
       "木": ["木头","树木","木马"],
@@ -246,7 +244,6 @@
       "蓝": ["蓝天","蓝色","天蓝"],
       "绿": ["绿色","绿叶","草地"],
       "黄": ["黄色","黄金","黄河"],
-      "高": ["高山","高大","跳高"],
       "矮": ["矮小","高矮","矮人"],
       "长": ["长大","长江","很长"],
       "短": ["短跑","长短","短处"],
@@ -298,7 +295,6 @@
       "澳": ["澳洲","澳门"],
       "洲": ["亚洲","非洲","美洲"],
       "亚": ["亚洲"],
-      // 第三级开始精简，其余字按此规律补充...
       "石": ["石头","石子","石门"],
       "沙": ["沙子","沙土","风沙"],
       "风": ["大风","刮风","风沙"],
@@ -316,7 +312,6 @@
       "海": ["大海","海水","海边"],
       "湖": ["湖水","江湖","西湖"],
       "江": ["长江","江水","江南"],
-      "田": ["水田","田地","农田"],
       "园": ["花园","公园","园子"],
       "林": ["树林","林子","森林"],
       "路": ["马路","路上","公路"],
@@ -336,7 +331,6 @@
       "菜": ["白菜","青菜","种菜"],
       "肉": ["牛肉","鸡肉","吃肉"],
       "蛋": ["鸡蛋","鸟蛋","蛋糕"],
-      "奶": ["牛奶","奶牛","奶奶"],
       "果": ["水果","苹果","果子"],
       "瓜": ["西瓜","瓜子","冬瓜"],
       "叶": ["树叶","叶子","茶叶"],
@@ -347,24 +341,14 @@
       "苗": ["禾苗","树苗","幼苗"],
       "禾": ["禾苗"],
       "森": ["森林"],
-      "林": ["森林","树林","林子"],
-      "草": ["小草","草地","花草"],
-      "花": ["花朵","花草","开花"],
-      "树": ["大树","树木","树叶"],
-      "叶": ["树叶","叶子","落叶"],
-      "虫": ["虫子","小虫","害虫"],
-      "鸟": ["小鸟","飞鸟","鸟语"],
-      "鱼": ["小鱼","金鱼","钓鱼"],
       "虾": ["小虾","鱼虾","虾米"],
       "贝": ["贝壳","宝贝","贝类"],
       "壳": ["贝壳","蛋壳","外壳"],
-      // 第四级
       "声": ["声音","笑声","大声"],
       "音": ["声音","音乐","话音"],
       "歌": ["唱歌","儿歌","歌手"],
       "唱": ["唱歌","合唱","唱片"],
       "画": ["画画","图画","画家"],
-      "写": ["写字","书写","大写"],
       "字": ["写字","汉字","名字"],
       "句": ["句子","一句话","句号"],
       "诗": ["古诗","诗人","诗歌"],
@@ -412,11 +396,9 @@
       "错": ["错误","不错","认错"],
       "真": ["真实","天真","认真"],
       "假": ["假装","真假","假的"],
-      "美": ["美丽","美好","美国"],
       "丑": ["丑小鸭","小丑","美丑"],
       "新": ["新年","新旧","新书"],
       "旧": ["新旧","破旧","仍旧"],
-      // 第五级
       "知": ["知道","知识","知名"],
       "道": ["知道","道路","道理"],
       "想": ["想法","想要","想念"],
@@ -434,7 +416,6 @@
       "所": ["所以","所有","所长"],
       "但": ["但是","不但"],
       "如": ["如果","比如","如何"],
-      "果": ["如果","水果","苹果"],
       "虽": ["虽然"],
       "然": ["虽然","然后","自然"],
       "比": ["比较","比如","比赛"],
@@ -442,8 +423,6 @@
       "更": ["更加","更好","更大"],
       "最": ["最好","最大","最后"],
       "很": ["很好","很大","很多"],
-      "太": ["太太","太阳","太平"],
-      "非": ["非常","是非","非洲"],
       "常": ["非常","常常","经常"],
       "都": ["都是","全都","都会"],
       "全": ["全部","完全","安全"],
@@ -451,7 +430,6 @@
       "才": ["人才","才能","刚才"],
       "还": ["还是","还有","还要"],
       "也": ["也是","也许","也好"],
-      "又": ["又一次","又来了"],
       "再": ["再见","再次","一再"],
       "每": ["每天","每个","每次"],
       "各": ["各种","各位","各自"],
@@ -467,8 +445,6 @@
       "哪": ["哪里","哪个","哪些"],
       "谁": ["谁的","谁家"],
       "几": ["几个","几天","几岁"],
-      "多": ["多少","许多","很多"],
-      "少": ["多少","少年","少数"],
       "次": ["几次","每次","再次"],
       "回": ["回去","回来","回答"],
       "遍": ["一遍","几遍"],
@@ -476,17 +452,13 @@
       "点": ["一点","点心","点头"],
       "块": ["一块","方块","土块"],
       "条": ["一条","面条","条件"],
-      "只": ["一只","只要"],
-      "头": ["一头","石头","头发"],
       "朵": ["花朵","云朵","一朵"],
       "颗": ["一颗","颗粒"],
       "棵": ["一棵","一棵树"],
       "座": ["一座","座位","让座"],
-      "间": ["一间","中间","时间"],
       "辆": ["一辆","车辆"],
       "艘": ["一艘"],
       "吧": ["好吧","吧台"],
-      // 第六级
       "教": ["教师","教育","教会"],
       "育": ["教育","体育","养育"],
       "培": ["培养","培土"],
@@ -495,11 +467,8 @@
       "护": ["保护","爱护","护士"],
       "帮": ["帮助","帮忙","帮手"],
       "助": ["帮助","助手","互助"],
-      "关": ["关心","关注","开关"],
-      "心": ["关心","小心","爱心"],
       "照": ["照顾","照片","照明"],
       "顾": ["照顾","顾客","回顾"],
-      "学": ["学习","学校","学生"],
       "习": ["学习","练习","习惯"],
       "练": ["练习","训练","练字"],
       "复": ["复习","反复","复杂"],
@@ -514,23 +483,19 @@
       "格": ["合格","格外","格子"],
       "优": ["优秀","优点","优美"],
       "秀": ["优秀","秀气","秀丽"],
-      "进": ["进步","进入","前进"],
       "步": ["进步","跑步","脚步"],
       "努": ["努力"],
       "力": ["努力","力气","用力"],
       "认": ["认识","认真","认可"],
       "识": ["认识","知识","识字"],
       "阅": ["阅读","阅览","订阅"],
-      "读": ["阅读","读书","读者"],
       "理": ["理解","道理","管理"],
       "解": ["理解","解放","解决"],
-      "表": ["表达","手表","表示"],
       "达": ["到达","表达","发达"],
       "沟": ["沟通","水沟","山沟"],
       "通": ["交通","通过","通知"],
       "交": ["交通","交流","上交"],
       "流": ["交流","河流","流水"],
-      "分": ["分享","分别","十分"],
       "享": ["分享","享受"],
       "作": ["工作","作业","动作"],
       "团": ["团结","团体","团员"],
@@ -540,39 +505,30 @@
       "伙": ["伙伴","伙计","同伙"],
       "伴": ["伙伴","同伴","陪伴"],
       "同": ["同学","相同","一同"],
-      "老": ["老师","老人","老虎"],
       "师": ["老师","教师","师父"],
       "校": ["学校","校长","校园"],
-      "园": ["校园","花园","公园"],
       "室": ["教室","室内","室外"],
       "操": ["操场","操作","体操"],
       "场": ["操场","广场","场地"],
       "图": ["图书","图画","地图"],
-      "书": ["图书","书本","看书"],
       "馆": ["图书馆","饭馆","宾馆"],
       "实": ["实验","实在","真实"],
-      "验": ["实验","考验","检验"],
-      "手": ["手工","小手","手上"],
       "工": ["手工","工人","工作"],
-      "绘": ["绘画","绘制"],
-      "画": ["绘画","画画","图画"]
+      "绘": ["绘画","绘制"]
     };
 
-    // 过滤后的组词映射（只保留所有字都在字库中的词语）
     const wordGroups = {};
     for (const [char, groups] of Object.entries(rawWordGroups)) {
       const valid = groups.filter(word => [...word].every(c => allChars.has(c)));
       if (valid.length > 0) wordGroups[char] = valid;
     }
 
-    // 游戏变量
     const GROUP_SIZE = 5;
     let currentLevelIndex = 0, currentGroupIndex = 0;
     let currentWords = [], currentQuizWords = [];
     let gameActive = false, quizActive = false, totalStars = 0;
     let progress = { unlockedLevel: 1, completedGroups: {}, stars: 0 };
 
-    // DOM 元素
     const startScreen = document.getElementById('startScreen');
     const mapScreen = document.getElementById('mapScreen');
     const groupScreen = document.getElementById('groupScreen');
@@ -595,7 +551,6 @@
     const quizOptions = document.getElementById('quizOptions');
     const quizCompleteBtn = document.getElementById('quizCompleteBtn');
 
-    // 音频系统
     let audioCtx = null;
     function createAudioContext() {
       if (audioCtx) return;
@@ -612,8 +567,7 @@
     }, { passive: true, once: true });
 
     function playBeep(freq, type, dur=0.15) {
-      if (!audioCtx) createAudioContext();
-      resumeAudio();
+      if (!audioCtx) createAudioContext(); resumeAudio();
       try {
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
@@ -626,7 +580,6 @@
     function soundCorrect() { playBeep(660,'sine',0.2); setTimeout(()=>playBeep(880,'sine',0.25),150); }
     function soundWrong() { playBeep(200,'triangle',0.3); }
 
-    // 播放单个汉字音频
     function playCharAudio(char) {
       return new Promise((resolve) => {
         const audio = new Audio('audio/' + char + '.mp3');
@@ -637,15 +590,16 @@
       });
     }
 
-    // 播放组词音频（依次播放各字）
-    async function speakWithGroup(char) {
-      playBeep(800, 'sine', 0.12); // 叮咚
-      await playCharAudio(char);   // 先读字
-      // 获取一个随机组词
+    // 核心修改：同步显示与发音
+    async function speakWithGroup(char, displayElement) {
+      playBeep(800, 'sine', 0.12);
+      await playCharAudio(char);
+
       const groups = wordGroups[char];
       if (groups && groups.length > 0) {
         const group = groups[Math.floor(Math.random() * groups.length)];
-        // 短暂停顿后再读组词
+        // 立即更新显示（如果传入了显示元素）
+        if (displayElement) displayElement.textContent = group;
         await new Promise(r => setTimeout(r, 300));
         for (const c of group) {
           await playCharAudio(c);
@@ -659,7 +613,6 @@
       setTimeout(() => el.classList.remove('touched'), 200);
     }
 
-    // 进度管理 (同之前，省略一些细节，但完整保留)
     function saveProgress() {
       progress.stars = totalStars;
       localStorage.setItem('sheep_mountain_progress', JSON.stringify(progress));
@@ -704,7 +657,6 @@
       }
     }
 
-    // 启动按钮
     document.getElementById('startBtn').addEventListener('click', () => {
       startScreen.classList.add('hidden');
       mapScreen.classList.remove('hidden');
@@ -772,9 +724,9 @@
     }
     function showGameWord(word) {
       targetChar.textContent = word;
-      // 显示组词
       const groups = wordGroups[word];
-      groupWordDisplay.textContent = groups ? groups[Math.floor(Math.random() * groups.length)] : '--';
+      const initGroup = groups ? groups[Math.floor(Math.random() * groups.length)] : '--';
+      groupWordDisplay.textContent = initGroup;
       gameMessage.textContent = '🐑 找找相同的字吧！';
       const correct = word;
       const distractors = getDistractors(correct, 3, currentLevelIndex);
@@ -786,14 +738,12 @@
         optionsContainer.appendChild(card);
       });
       progressFill.style.width = ((gameRoundIndex/gameRoundWords.length)*100)+'%';
-      // 点击目标汉字：发音+组词
       targetChar.onclick = () => {
         triggerTouchFeedback(targetChar);
-        speakWithGroup(targetChar.textContent);
+        speakWithGroup(targetChar.textContent, groupWordDisplay);
       };
-      // 点击组词显示区域也可发音
       groupWordDisplay.onclick = () => {
-        speakWithGroup(targetChar.textContent);
+        speakWithGroup(targetChar.textContent, groupWordDisplay);
       };
     }
     function handleGameOption(card, selected, correct) {
@@ -803,8 +753,7 @@
         card.classList.add('correct-highlight');
         gameMessage.textContent = '🎉 太棒了！就是这个字！';
         soundCorrect();
-        // 正确后自动播放组词
-        speakWithGroup(correct);
+        speakWithGroup(correct, groupWordDisplay);
         spawnStars(6);
         const idx = currentWords.indexOf(correct);
         if (idx > -1) currentWords.splice(idx,1);
@@ -818,7 +767,7 @@
         soundWrong();
         gameMessage.textContent = '🤔 再试试看！';
         allCards.forEach(c => { if (c.textContent===correct) c.classList.add('correct-highlight'); });
-        speakWithGroup(correct);
+        speakWithGroup(correct, groupWordDisplay);
         setTimeout(() => {
           card.classList.remove('wrong-flash');
           allCards.forEach(c => c.classList.remove('correct-highlight'));
@@ -873,8 +822,8 @@
         card.addEventListener('click', (e) => handleQuizOption(card, opt, correct));
         quizOptions.appendChild(card);
       });
-      quizTarget.onclick = () => { triggerTouchFeedback(quizTarget); speakWithGroup(quizTarget.textContent); };
-      quizGroupWordDisplay.onclick = () => speakWithGroup(quizTarget.textContent);
+      quizTarget.onclick = () => { triggerTouchFeedback(quizTarget); speakWithGroup(quizTarget.textContent, quizGroupWordDisplay); };
+      quizGroupWordDisplay.onclick = () => speakWithGroup(quizTarget.textContent, quizGroupWordDisplay);
     }
     function handleQuizOption(card, selected, correct) {
       if (!quizActive) return;
@@ -882,13 +831,13 @@
       if (selected===correct) {
         card.classList.add('correct-highlight'); soundCorrect();
         quizMessage.textContent='✅ 答对了！';
-        speakWithGroup(correct);
+        speakWithGroup(correct, quizGroupWordDisplay);
         quizIndex++; setTimeout(nextQuizRound, 1000);
       } else {
         card.classList.add('wrong-flash'); soundWrong();
         quizMessage.textContent='💡 这个是 '+correct;
         allCards.forEach(c => { if(c.textContent===correct) c.classList.add('correct-highlight'); });
-        speakWithGroup(correct);
+        speakWithGroup(correct, quizGroupWordDisplay);
         setTimeout(() => {
           card.classList.remove('wrong-flash');
           allCards.forEach(c => c.classList.remove('correct-highlight'));
@@ -916,7 +865,6 @@
     function shuffleArray(arr) { for (let i=arr.length-1;i>0;i--) { const j=Math.floor(Math.random()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]]; } }
     document.getElementById('backToMapBtn').addEventListener('click', ()=>{ groupScreen.classList.add('hidden'); mapScreen.classList.remove('hidden'); renderMap(); });
 
-    // 启动
     loadProgress();
     startScreen.classList.remove('hidden');
     mapScreen.classList.add('hidden');
