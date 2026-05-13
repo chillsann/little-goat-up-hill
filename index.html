@@ -198,21 +198,16 @@
       min-width: 140px;
       cursor: pointer;
       user-select: none;
-      transition: transform 0.1s, background 0.1s;
+      transition: transform 0.1s, background 0.1s, box-shadow 0.1s;
       position: relative;
     }
     .big-character:active {
       transform: scale(0.94);
       background: #ffe0b2;
     }
-    .big-character::after {
-      content: "🔊";
-      font-size: 20px;
-      position: absolute;
-      bottom: 5px;
-      right: 8px;
-      opacity: 0.5;
-      pointer-events: none;
+    .big-character.touched {
+      background: #ffe0b2 !important;
+      box-shadow: 0 0 0 6px rgba(255,183,77,0.5);
     }
     .options-row {
       display: grid;
@@ -324,6 +319,26 @@
       0% { opacity: 1; transform: translateY(0) rotate(0deg); }
       100% { opacity: 0; transform: translateY(160px) rotate(200deg); }
     }
+    .toast {
+      position: fixed;
+      top: 30%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0,0,0,0.75);
+      color: #fff;
+      padding: 12px 30px;
+      border-radius: 40px;
+      font-size: 18px;
+      z-index: 300;
+      pointer-events: none;
+      animation: toastFade 2s forwards;
+    }
+    @keyframes toastFade {
+      0% { opacity: 0; transform: translate(-50%, -40%); }
+      15% { opacity: 1; transform: translate(-50%, -50%); }
+      80% { opacity: 1; transform: translate(-50%, -50%); }
+      100% { opacity: 0; transform: translate(-50%, -30%); }
+    }
   </style>
 </head>
 <body>
@@ -334,13 +349,11 @@
   </div>
   <div class="star-counter" id="starDisplay">⭐ 0 颗星星</div>
 
-  <!-- 启动画面 -->
   <div id="startScreen" class="start-screen">
     <div style="font-size:60px;">🐑🌄</div>
     <div style="font-size:22px;font-weight:600;color:#5e4b2b;">小羊上山识字大冒险</div>
     <button class="big-btn" id="startBtn">开 始 冒 险</button>
-    <div style="font-size:16px;color:#8b7a4c;">点击按钮后声音就启动啦 🔊</div>
-    <div id="soundStatus" style="font-size:14px;color:#999;"></div>
+    <div id="soundStatus" style="font-size:15px;color:#999;"></div>
   </div>
 
   <div id="mapScreen" class="screen hidden">
@@ -357,7 +370,7 @@
   <div id="gameScreen" class="screen hidden">
     <div id="gameLevelInfo" style="font-weight:600;color:#6b4f32;font-size:18px;"></div>
     <div class="big-character" id="targetChar">羊</div>
-    <div class="tap-hint">👆 点汉字听发音（会有叮一声）</div>
+    <div class="tap-hint">👆 点汉字会有音效和变色反馈</div>
     <div class="message-box" id="gameMessage">🐑 找找这个字吧！</div>
     <div class="options-row" id="optionsContainer"></div>
     <div class="progress-bar" style="margin-top:15px;"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
@@ -367,7 +380,7 @@
   <div id="quizScreen" class="screen hidden">
     <div style="font-size:24px;font-weight:700;color:#b45f06;">🏆 关卡小测验</div>
     <div class="big-character" id="quizTarget">山</div>
-    <div class="tap-hint">👆 点汉字听发音（会有叮一声）</div>
+    <div class="tap-hint">👆 点汉字会有音效和变色反馈</div>
     <div class="message-box" id="quizMessage">🔊 听一听，找一找</div>
     <div class="options-row" id="quizOptions"></div>
     <button class="btn back hidden" id="quizCompleteBtn" style="margin-top:15px;">🎊 测验完成</button>
@@ -395,7 +408,7 @@
     let quizActive = false;
     let totalStars = 0;
     let audioUnlocked = false;
-    let speechAvailable = false;   // 标记语音合成是否真的可用
+    let speechAvailable = false; 
 
     let progress = {
       unlockedLevel: 1,
@@ -424,126 +437,165 @@
     const quizCompleteBtn = document.getElementById('quizCompleteBtn');
     const soundStatus = document.getElementById('soundStatus');
 
+    // ====== 音频核心：强力解锁 AudioContext ======
     let audioCtx = null;
-    function initAudio() {
+
+    function createAudioContext() {
       if (audioCtx) return;
       try {
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        if (audioCtx.state === 'suspended') {
-          audioCtx.resume();
-        }
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        audioCtx = new AudioContext();
+        console.log('AudioContext 已创建，状态:', audioCtx.state);
       } catch(e) {
-        console.warn('Web Audio API 不可用');
+        console.error('无法创建 AudioContext', e);
       }
     }
 
-    function playBeep(freq, type, duration) {
-      if (!audioCtx) return;
-      // 确保 AudioContext 是 running 状态
-      if (audioCtx.state === 'suspended') {
-        audioCtx.resume();
+    function resumeAudio() {
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume().then(() => {
+          console.log('AudioContext 已恢复');
+        }).catch(e => console.warn('恢复失败', e));
       }
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      osc.type = type;
-      osc.frequency.value = freq;
-      gain.gain.value = 0.15;
-      osc.connect(gain);
-      gain.connect(audioCtx.destination);
-      osc.start();
-      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
-      osc.stop(audioCtx.currentTime + duration);
     }
+
+    // 在第一次触摸时就触发音频解锁（最可靠）
+    function initAudioOnFirstTouch(e) {
+      if (audioUnlocked) return;
+      createAudioContext();
+      resumeAudio();
+      // 播放一个极短的无声缓冲音，彻底激活音频通道
+      if (audioCtx) {
+        const buf = audioCtx.createBuffer(1, 1, 22050);
+        const src = audioCtx.createBufferSource();
+        src.buffer = buf;
+        src.connect(audioCtx.destination);
+        src.start(0);
+        src.stop(audioCtx.currentTime + 0.001);
+      }
+      audioUnlocked = true;
+      document.removeEventListener('touchstart', initAudioOnFirstTouch);
+      document.removeEventListener('click', initAudioOnFirstTouch);
+    }
+
+    // 绑定最初级的触摸事件
+    document.addEventListener('touchstart', initAudioOnFirstTouch, { passive: true });
+    document.addEventListener('click', initAudioOnFirstTouch, { once: true });
+
+    // 播放音效（保证可用）
+    function playBeep(freq, type, duration = 0.15) {
+      if (!audioCtx) {
+        createAudioContext();
+        resumeAudio();
+      }
+      if (!audioCtx) return; // 实在创建不了就算了
+      if (audioCtx.state === 'suspended') {
+        resumeAudio();
+      }
+      try {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.value = freq;
+        gain.gain.value = 0.25;
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+        osc.stop(audioCtx.currentTime + duration);
+      } catch (e) {
+        console.warn('播放音效失败', e);
+      }
+    }
+
     function soundCorrect() { playBeep(660, 'sine', 0.2); setTimeout(()=>playBeep(880, 'sine', 0.25), 150); }
     function soundWrong() { playBeep(200, 'triangle', 0.3); }
 
-    // 增强的语音朗读
+    // 语音朗读（带视觉反馈）
     function speak(text) {
-      if (!audioUnlocked) {
-        // 如果声音还没解锁，只播放提示音作为反馈
-        playBeep(600, 'sine', 0.15);
-        return;
-      }
-
-      // 无论如何先播一个提示音，表示点击生效
+      // 无论语音是否可用，先播放提示音 + 视觉闪光
       playBeep(800, 'sine', 0.12);
 
-      if (!window.speechSynthesis) {
-        soundStatus.textContent = '当前浏览器不支持语音朗读';
+      // 如果音频还没解锁，强制解锁一次
+      if (!audioUnlocked) {
+        initAudioOnFirstTouch();
+      }
+
+      // 如果已经知道语音不可用，只给视觉提示
+      if (speechAvailable === false) {
+        showToast('🔇 当前无语音朗读，请家长陪读');
         return;
       }
 
-      // 检查是否之前已经标记为可用
-      if (!speechAvailable) {
-        // 尝试朗读一个短音测试
-        const testUtter = new SpeechSynthesisUtterance('测试');
-        testUtter.lang = 'zh-CN';
-        testUtter.volume = 1;
-        testUtter.onerror = () => {
-          speechAvailable = false;
-          soundStatus.textContent = '🔇 语音朗读被阻止，请检查系统设置';
-        };
-        testUtter.onstart = () => {
-          speechAvailable = true;
-          soundStatus.textContent = '';
-        };
-        window.speechSynthesis.cancel();
-        window.speechSynthesis.speak(testUtter);
-        setTimeout(() => {
-          if (!speechAvailable) {
-            // 测试失败，不继续朗读
-            return;
-          }
-          // 测试成功，真正朗读
-          doSpeak(text);
-        }, 300);
-      } else {
-        doSpeak(text);
+      if (!window.speechSynthesis) {
+        speechAvailable = false;
+        showToast('🔇 您的浏览器不支持朗读');
+        return;
       }
-    }
 
-    function doSpeak(text) {
+      // 尝试朗读
       window.speechSynthesis.cancel();
       const utter = new SpeechSynthesisUtterance(text);
       utter.lang = 'zh-CN';
       utter.rate = 0.8;
       utter.pitch = 1.1;
       utter.volume = 1;
+
+      let hasStarted = false;
+      utter.onstart = () => {
+        hasStarted = true;
+        speechAvailable = true;
+        soundStatus.textContent = '';
+      };
+      utter.onerror = () => {
+        if (!hasStarted) {
+          speechAvailable = false;
+          soundStatus.textContent = '🔇 语音朗读被阻止';
+          showToast('🔇 语音朗读不可用，试试换个浏览器');
+        }
+      };
       window.speechSynthesis.speak(utter);
     }
 
-    function unlockAudio() {
-      if (audioUnlocked) return;
-      initAudio();
-      // 强制恢复音频上下文
-      if (audioCtx && audioCtx.state === 'suspended') {
-        audioCtx.resume();
-      }
-      // 播放一个明显的提示音，测试音频输出
-      playBeep(1000, 'sine', 0.25);
-      setTimeout(() => playBeep(1200, 'sine', 0.25), 200);
-
-      // 预热语音合成
-      if (window.speechSynthesis) {
-        window.speechSynthesis.cancel();
-        const warmUp = new SpeechSynthesisUtterance('小羊上山');
-        warmUp.lang = 'zh-CN';
-        warmUp.volume = 1;
-        warmUp.onstart = () => {
-          speechAvailable = true;
-          soundStatus.textContent = '✅ 声音已开启';
-        };
-        warmUp.onerror = () => {
-          speechAvailable = false;
-          soundStatus.textContent = '🔇 语音不可用（但叮咚声有效）';
-        };
-        window.speechSynthesis.speak(warmUp);
-      } else {
-        soundStatus.textContent = '🔇 浏览器不支持语音';
-      }
-      audioUnlocked = true;
+    function showToast(msg) {
+      const toast = document.createElement('div');
+      toast.className = 'toast';
+      toast.textContent = msg;
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 2100);
     }
 
+    // 点击汉字的视觉反馈（非常重要，作为无声时的明显回应）
+    function triggerTouchFeedback(element) {
+      element.classList.add('touched');
+      setTimeout(() => element.classList.remove('touched'), 200);
+    }
+
+    // 首次启动按钮（额外强化一次音频）
+    document.getElementById('startBtn').addEventListener('click', () => {
+      createAudioContext();
+      resumeAudio();
+      // 再次确保解锁
+      initAudioOnFirstTouch();
+      // 播放一个明显的测试音
+      playBeep(1000, 'sine', 0.3);
+      // 尝试语音预热
+      if (window.speechSynthesis && !speechAvailable) {
+        const test = new SpeechSynthesisUtterance('小羊');
+        test.lang = 'zh-CN';
+        test.volume = 1;
+        test.onstart = () => { speechAvailable = true; soundStatus.textContent = '✅ 声音已开启'; };
+        test.onerror = () => { speechAvailable = false; soundStatus.textContent = '🔇 语音不可用（但音效正常）'; };
+        window.speechSynthesis.speak(test);
+      }
+      // 进入地图
+      startScreen.classList.add('hidden');
+      mapScreen.classList.remove('hidden');
+      renderMap();
+    });
+
+    // 进度、存读档等逻辑与之前相同，此处省略重复（完整代码需要包含原先所有游戏逻辑）
+    // ⚠️ 为了保持回答简洁，下面是游戏核心逻辑的整合，已经包含所有交互中的 speak 和视觉反馈
     function saveProgress() {
       progress.stars = totalStars;
       localStorage.setItem('sheep_mountain_progress', JSON.stringify(progress));
@@ -568,17 +620,14 @@
       totalStars = 0;
       saveProgress();
     }
-
     function updateStarDisplay() {
       starDisplay.textContent = `⭐ ${totalStars} 颗星星`;
     }
-
     function addStars(n) {
       totalStars += n;
       updateStarDisplay();
       saveProgress();
     }
-
     function isGroupCompleted(levelIdx, groupIdx) {
       return progress.completedGroups[levelIdx] && progress.completedGroups[levelIdx].includes(groupIdx);
     }
@@ -589,11 +638,9 @@
         saveProgress();
       }
     }
-
     function getTotalGroups(levelIdx) {
       return Math.ceil(LEVELS[levelIdx].words.length / GROUP_SIZE);
     }
-
     function isLevelFullyCompleted(levelIdx) {
       const total = getTotalGroups(levelIdx);
       for (let i = 0; i < total; i++) {
@@ -601,7 +648,6 @@
       }
       return true;
     }
-
     function spawnStars(count = 8) {
       for (let i = 0; i < count; i++) {
         setTimeout(() => {
@@ -630,7 +676,7 @@
           <div class="level-stars">${completed ? '🌟 已通关' : (unlocked ? '🔓 可挑战' : '🔒 未解锁')}</div>
         `;
         card.addEventListener('click', () => {
-          if (!audioUnlocked) return;
+          initAudioOnFirstTouch();
           if (!unlocked) {
             speak('这一关还没解锁哦，继续加油吧！');
             return;
@@ -663,7 +709,7 @@
           btn.classList.add('locked');
         }
         btn.addEventListener('click', () => {
-          if (!audioUnlocked) return;
+          initAudioOnFirstTouch();
           if (btn.classList.contains('locked')) {
             speak('先完成前面的一组吧');
             return;
@@ -728,14 +774,16 @@
       const progressPercent = (gameRoundIndex / gameRoundWords.length) * 100;
       progressFill.style.width = progressPercent + '%';
 
-      // 汉字点击：一定会有声音反馈
+      // 汉字点击：视觉 + 声音
       targetChar.onclick = () => {
+        triggerTouchFeedback(targetChar);
         speak(targetChar.textContent);
       };
     }
 
     function handleGameOption(card, selected, correct) {
-      if (!gameActive || !audioUnlocked) return;
+      if (!gameActive) return;
+      initAudioOnFirstTouch();
       const allCards = document.querySelectorAll('#optionsContainer .option-card');
       if (selected === correct) {
         card.classList.add('correct-highlight');
@@ -830,14 +878,15 @@
         card.addEventListener('click', (e) => handleQuizOption(card, opt, correct));
         quizOptions.appendChild(card);
       });
-      // 汉字点击
       quizTarget.onclick = () => {
+        triggerTouchFeedback(quizTarget);
         speak(quizTarget.textContent);
       };
     }
 
     function handleQuizOption(card, selected, correct) {
-      if (!quizActive || !audioUnlocked) return;
+      if (!quizActive) return;
+      initAudioOnFirstTouch();
       const allCards = document.querySelectorAll('#quizOptions .option-card');
       if (selected === correct) {
         card.classList.add('correct-highlight');
@@ -898,22 +947,13 @@
       }
     }
 
-    // 返回地图
     document.getElementById('backToMapBtn').addEventListener('click', () => {
       groupScreen.classList.add('hidden');
       mapScreen.classList.remove('hidden');
       renderMap();
     });
 
-    // 启动按钮
-    document.getElementById('startBtn').addEventListener('click', () => {
-      unlockAudio();
-      startScreen.classList.add('hidden');
-      mapScreen.classList.remove('hidden');
-      renderMap();
-    });
-
-    // 初始化
+    // 初始加载
     loadProgress();
     startScreen.classList.remove('hidden');
     mapScreen.classList.add('hidden');
