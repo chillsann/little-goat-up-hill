@@ -370,7 +370,7 @@
   <div id="gameScreen" class="screen hidden">
     <div id="gameLevelInfo" style="font-weight:600;color:#6b4f32;font-size:18px;"></div>
     <div class="big-character" id="targetChar">羊</div>
-    <div class="tap-hint">👆 点汉字会有音效和变色反馈</div>
+    <div class="tap-hint">👆 点汉字听发音（会有叮一声）</div>
     <div class="message-box" id="gameMessage">🐑 找找这个字吧！</div>
     <div class="options-row" id="optionsContainer"></div>
     <div class="progress-bar" style="margin-top:15px;"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
@@ -380,7 +380,7 @@
   <div id="quizScreen" class="screen hidden">
     <div style="font-size:24px;font-weight:700;color:#b45f06;">🏆 关卡小测验</div>
     <div class="big-character" id="quizTarget">山</div>
-    <div class="tap-hint">👆 点汉字会有音效和变色反馈</div>
+    <div class="tap-hint">👆 点汉字听发音（会有叮一声）</div>
     <div class="message-box" id="quizMessage">🔊 听一听，找一找</div>
     <div class="options-row" id="quizOptions"></div>
     <button class="btn back hidden" id="quizCompleteBtn" style="margin-top:15px;">🎊 测验完成</button>
@@ -408,7 +408,6 @@
     let quizActive = false;
     let totalStars = 0;
     let audioUnlocked = false;
-    let speechAvailable = false; 
 
     let progress = {
       unlockedLevel: 1,
@@ -437,7 +436,7 @@
     const quizCompleteBtn = document.getElementById('quizCompleteBtn');
     const soundStatus = document.getElementById('soundStatus');
 
-    // ====== 音频核心：强力解锁 AudioContext ======
+    // ====== 音频核心 ======
     let audioCtx = null;
 
     function createAudioContext() {
@@ -445,26 +444,20 @@
       try {
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         audioCtx = new AudioContext();
-        console.log('AudioContext 已创建，状态:', audioCtx.state);
-      } catch(e) {
-        console.error('无法创建 AudioContext', e);
-      }
+      } catch(e) {}
     }
 
     function resumeAudio() {
       if (audioCtx && audioCtx.state === 'suspended') {
-        audioCtx.resume().then(() => {
-          console.log('AudioContext 已恢复');
-        }).catch(e => console.warn('恢复失败', e));
+        audioCtx.resume();
       }
     }
 
-    // 在第一次触摸时就触发音频解锁（最可靠）
-    function initAudioOnFirstTouch(e) {
+    // 全局触摸解锁
+    function initAudioOnFirstTouch() {
       if (audioUnlocked) return;
       createAudioContext();
       resumeAudio();
-      // 播放一个极短的无声缓冲音，彻底激活音频通道
       if (audioCtx) {
         const buf = audioCtx.createBuffer(1, 1, 22050);
         const src = audioCtx.createBufferSource();
@@ -474,24 +467,17 @@
         src.stop(audioCtx.currentTime + 0.001);
       }
       audioUnlocked = true;
-      document.removeEventListener('touchstart', initAudioOnFirstTouch);
-      document.removeEventListener('click', initAudioOnFirstTouch);
     }
 
-    // 绑定最初级的触摸事件
     document.addEventListener('touchstart', initAudioOnFirstTouch, { passive: true });
-    document.addEventListener('click', initAudioOnFirstTouch, { once: true });
+    document.addEventListener('click', initAudioOnFirstTouch);
 
-    // 播放音效（保证可用）
     function playBeep(freq, type, duration = 0.15) {
       if (!audioCtx) {
         createAudioContext();
         resumeAudio();
       }
-      if (!audioCtx) return; // 实在创建不了就算了
-      if (audioCtx.state === 'suspended') {
-        resumeAudio();
-      }
+      if (!audioCtx || audioCtx.state === 'suspended') resumeAudio();
       try {
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
@@ -503,37 +489,26 @@
         osc.start();
         gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
         osc.stop(audioCtx.currentTime + duration);
-      } catch (e) {
-        console.warn('播放音效失败', e);
-      }
+      } catch(e) {}
     }
 
     function soundCorrect() { playBeep(660, 'sine', 0.2); setTimeout(()=>playBeep(880, 'sine', 0.25), 150); }
     function soundWrong() { playBeep(200, 'triangle', 0.3); }
 
-    // 语音朗读（带视觉反馈）
+    // 语音朗读（总是尝试，不设永久禁用）
     function speak(text) {
-      // 无论语音是否可用，先播放提示音 + 视觉闪光
+      // 先播放提示音，确保有反馈
       playBeep(800, 'sine', 0.12);
 
-      // 如果音频还没解锁，强制解锁一次
-      if (!audioUnlocked) {
-        initAudioOnFirstTouch();
-      }
-
-      // 如果已经知道语音不可用，只给视觉提示
-      if (speechAvailable === false) {
-        showToast('🔇 当前无语音朗读，请家长陪读');
-        return;
-      }
+      // 如果还没有解锁音频，尝试解锁
+      if (!audioUnlocked) initAudioOnFirstTouch();
 
       if (!window.speechSynthesis) {
-        speechAvailable = false;
-        showToast('🔇 您的浏览器不支持朗读');
+        showToast('🔇 浏览器不支持朗读');
         return;
       }
 
-      // 尝试朗读
+      // 无论之前成功或失败，每次点击都重新朗读
       window.speechSynthesis.cancel();
       const utter = new SpeechSynthesisUtterance(text);
       utter.lang = 'zh-CN';
@@ -541,19 +516,14 @@
       utter.pitch = 1.1;
       utter.volume = 1;
 
-      let hasStarted = false;
-      utter.onstart = () => {
-        hasStarted = true;
-        speechAvailable = true;
-        soundStatus.textContent = '';
-      };
       utter.onerror = () => {
-        if (!hasStarted) {
-          speechAvailable = false;
-          soundStatus.textContent = '🔇 语音朗读被阻止';
-          showToast('🔇 语音朗读不可用，试试换个浏览器');
+        // 如果出错，仅显示一次温柔提示（避免频繁弹出）
+        if (!sessionStorage.getItem('speech_warned')) {
+          showToast('🔇 当前无语音朗读，试试手机自带浏览器');
+          sessionStorage.setItem('speech_warned', '1');
         }
       };
+
       window.speechSynthesis.speak(utter);
     }
 
@@ -565,37 +535,35 @@
       setTimeout(() => toast.remove(), 2100);
     }
 
-    // 点击汉字的视觉反馈（非常重要，作为无声时的明显回应）
     function triggerTouchFeedback(element) {
       element.classList.add('touched');
       setTimeout(() => element.classList.remove('touched'), 200);
     }
 
-    // 首次启动按钮（额外强化一次音频）
+    // 启动按钮
     document.getElementById('startBtn').addEventListener('click', () => {
-      createAudioContext();
-      resumeAudio();
-      // 再次确保解锁
       initAudioOnFirstTouch();
-      // 播放一个明显的测试音
       playBeep(1000, 'sine', 0.3);
-      // 尝试语音预热
-      if (window.speechSynthesis && !speechAvailable) {
+      // 预热语音
+      if (window.speechSynthesis) {
+        window.speechSynthesis.cancel();
         const test = new SpeechSynthesisUtterance('小羊');
         test.lang = 'zh-CN';
         test.volume = 1;
-        test.onstart = () => { speechAvailable = true; soundStatus.textContent = '✅ 声音已开启'; };
-        test.onerror = () => { speechAvailable = false; soundStatus.textContent = '🔇 语音不可用（但音效正常）'; };
+        test.onerror = () => {
+          soundStatus.textContent = '🔇 语音可能不可用，但音效正常';
+        };
+        test.onstart = () => {
+          soundStatus.textContent = '✅ 声音已开启';
+        };
         window.speechSynthesis.speak(test);
       }
-      // 进入地图
       startScreen.classList.add('hidden');
       mapScreen.classList.remove('hidden');
       renderMap();
     });
 
-    // 进度、存读档等逻辑与之前相同，此处省略重复（完整代码需要包含原先所有游戏逻辑）
-    // ⚠️ 为了保持回答简洁，下面是游戏核心逻辑的整合，已经包含所有交互中的 speak 和视觉反馈
+    // 进度管理
     function saveProgress() {
       progress.stars = totalStars;
       localStorage.setItem('sheep_mountain_progress', JSON.stringify(progress));
@@ -774,7 +742,6 @@
       const progressPercent = (gameRoundIndex / gameRoundWords.length) * 100;
       progressFill.style.width = progressPercent + '%';
 
-      // 汉字点击：视觉 + 声音
       targetChar.onclick = () => {
         triggerTouchFeedback(targetChar);
         speak(targetChar.textContent);
@@ -953,7 +920,7 @@
       renderMap();
     });
 
-    // 初始加载
+    // 初始化
     loadProgress();
     startScreen.classList.remove('hidden');
     mapScreen.classList.add('hidden');
