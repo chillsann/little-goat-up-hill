@@ -6,338 +6,92 @@
   <title>小羊上山识字大冒险 · 有声版</title>
   <style>
     * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      -webkit-tap-highlight-color: transparent;
-      user-select: none;
+      margin: 0; padding: 0; box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent; user-select: none;
       font-family: "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif;
     }
     body {
       background: linear-gradient(180deg, #b8e4b0 0%, #d4f0d0 30%, #fef9e4 70%, #ffe6b3 100%);
-      min-height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      padding: 10px;
-      margin: 0;
+      min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 10px; margin: 0;
     }
     .game-container {
-      width: 100%;
-      max-width: 500px;
-      background: rgba(255, 251, 235, 0.85);
-      backdrop-filter: blur(8px);
-      border-radius: 40px;
-      box-shadow: 0 20px 40px rgba(0,0,0,0.15), 0 8px 16px rgba(0,0,0,0.1);
-      padding: 20px 15px 25px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      position: relative;
-      min-height: 90vh;
+      width: 100%; max-width: 500px; background: rgba(255,251,235,0.85); backdrop-filter: blur(8px);
+      border-radius: 40px; box-shadow: 0 20px 40px rgba(0,0,0,0.15); padding: 20px 15px 25px;
+      display: flex; flex-direction: column; align-items: center; position: relative; min-height: 90vh;
     }
-    .header {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 15px;
-      width: 100%;
-      justify-content: center;
-    }
-    .sheep-icon {
-      font-size: 42px;
-      animation: bounce 1.2s infinite alternate;
-    }
-    @keyframes bounce {
-      0% { transform: translateY(0); }
-      100% { transform: translateY(-8px); }
-    }
-    .title {
-      font-size: 28px;
-      font-weight: 800;
-      color: #4a6b2f;
-      text-shadow: 2px 2px 0 #fff;
-      letter-spacing: 2px;
-    }
+    .header { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; }
+    .sheep-icon { font-size: 42px; animation: bounce 1.2s infinite alternate; }
+    @keyframes bounce { 0% { transform: translateY(0); } 100% { transform: translateY(-8px); } }
+    .title { font-size: 28px; font-weight: 800; color: #4a6b2f; text-shadow: 2px 2px 0 #fff; }
     .star-counter {
-      background: #ffe484;
-      border-radius: 30px;
-      padding: 6px 18px;
-      font-size: 18px;
-      font-weight: bold;
-      color: #7b5e3b;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.08);
+      background: #ffe484; border-radius: 30px; padding: 6px 18px; font-weight: bold;
+      color: #7b5e3b; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 8px rgba(0,0,0,0.08);
       margin-bottom: 10px;
     }
-    .screen {
-      width: 100%;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      flex: 1;
-    }
-    .hidden {
-      display: none !important;
-    }
-    .start-screen {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 20px;
-    }
+    .screen { width: 100%; display: flex; flex-direction: column; align-items: center; flex: 1; }
+    .hidden { display: none !important; }
+    .start-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; }
     .big-btn {
-      background: #ffb84d;
-      border: none;
-      border-radius: 50px;
-      padding: 16px 40px;
-      font-size: 28px;
-      font-weight: 700;
-      color: #fff;
-      letter-spacing: 4px;
-      box-shadow: 0 10px 0 #d68c2c;
-      cursor: pointer;
-      transition: all 0.1s;
-      margin: 10px 0;
-      -webkit-tap-highlight-color: transparent;
+      background: #ffb84d; border: none; border-radius: 50px; padding: 16px 40px; font-size: 28px;
+      font-weight: 700; color: #fff; letter-spacing: 4px; box-shadow: 0 10px 0 #d68c2c; cursor: pointer;
+      transition: all 0.1s; margin: 10px 0; -webkit-tap-highlight-color: transparent;
     }
-    .big-btn:active {
-      transform: translateY(6px);
-      box-shadow: 0 4px 0 #d68c2c;
-      background: #ffa32b;
-    }
-    .level-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 15px;
-      width: 100%;
-      margin-top: 10px;
-    }
+    .big-btn:active { transform: translateY(6px); box-shadow: 0 4px 0 #d68c2c; background: #ffa32b; }
+    .level-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; width: 100%; margin-top: 10px; }
     .level-card {
-      background: #ffffffdd;
-      border-radius: 25px;
-      padding: 15px 8px;
-      text-align: center;
-      box-shadow: 0 8px 16px rgba(0,0,0,0.1);
-      transition: transform 0.2s;
-      cursor: pointer;
-      border: 3px solid #e0d7b0;
-      position: relative;
+      background: #ffffffdd; border-radius: 25px; padding: 15px 8px; text-align: center;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.1); cursor: pointer; border: 3px solid #e0d7b0;
     }
-    .level-card:active {
-      transform: scale(0.94);
-      background: #fffef0;
-    }
-    .level-card.locked {
-      filter: grayscale(0.5);
-      background: #e9e3d0;
-      color: #aaa;
-    }
-    .group-grid {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 12px;
-      justify-content: center;
-      margin: 20px 0;
-    }
+    .level-card:active { transform: scale(0.94); background: #fffef0; }
+    .level-card.locked { filter: grayscale(0.5); background: #e9e3d0; color: #aaa; }
+    .group-grid { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin: 20px 0; }
     .group-btn {
-      width: 58px;
-      height: 58px;
-      border-radius: 50%;
-      background: #ffe9c4;
-      border: 3px solid #deb887;
-      font-weight: bold;
-      font-size: 18px;
-      color: #6b4f32;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-      transition: 0.15s;
-      -webkit-tap-highlight-color: transparent;
+      width: 58px; height: 58px; border-radius: 50%; background: #ffe9c4; border: 3px solid #deb887;
+      font-weight: bold; font-size: 18px; color: #6b4f32; display: flex; align-items: center;
+      justify-content: center; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     }
-    .group-btn:active {
-      transform: scale(0.9);
-      background: #f7d98c;
-    }
-    .group-btn.completed {
-      background: #b2e0a8;
-      border-color: #6b9e4a;
-      color: #2d5720;
-      position: relative;
-    }
-    .group-btn.completed::after {
-      content: "⭐";
-      font-size: 20px;
-      position: absolute;
-      top: -8px;
-      right: -6px;
-    }
-    .group-btn.locked {
-      opacity: 0.5;
-      pointer-events: none;
-      background: #ddd8cb;
-      border-color: #bbb;
-      color: #999;
-    }
+    .group-btn:active { transform: scale(0.9); background: #f7d98c; }
+    .group-btn.completed { background: #b2e0a8; border-color: #6b9e4a; color: #2d5720; position: relative; }
+    .group-btn.completed::after { content: "⭐"; font-size: 20px; position: absolute; top: -8px; right: -6px; }
+    .group-btn.locked { opacity: 0.5; pointer-events: none; background: #ddd8cb; border-color: #bbb; color: #999; }
     .big-character {
-      font-size: 100px;
-      font-weight: 900;
-      color: #4e342e;
-      background: #fff3e0;
-      border-radius: 30px;
-      padding: 10px 30px;
-      margin: 10px 0;
-      box-shadow: 0 10px 20px rgba(0,0,0,0.1);
-      line-height: 1.2;
-      text-align: center;
-      min-width: 140px;
-      cursor: pointer;
-      user-select: none;
-      transition: transform 0.1s, background 0.1s, box-shadow 0.1s;
+      font-size: 100px; font-weight: 900; color: #4e342e; background: #fff3e0; border-radius: 30px;
+      padding: 10px 30px; margin: 10px 0; box-shadow: 0 10px 20px rgba(0,0,0,0.1); cursor: pointer;
+      transition: transform 0.1s, background 0.1s, box-shadow 0.1s; min-width: 140px; text-align: center;
       position: relative;
     }
-    .big-character:active {
-      transform: scale(0.94);
-      background: #ffe0b2;
-    }
-    .big-character.touched {
-      background: #ffe0b2 !important;
-      box-shadow: 0 0 0 6px rgba(255,183,77,0.5);
-    }
-    .options-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 15px;
-      width: 100%;
-      margin-top: 15px;
-    }
+    .big-character:active { transform: scale(0.94); background: #ffe0b2; }
+    .big-character.touched { background: #ffe0b2 !important; box-shadow: 0 0 0 6px rgba(255,183,77,0.5); }
+    .options-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; width: 100%; margin-top: 15px; }
     .option-card {
-      background: #fffbf0;
-      border: 4px solid #d4b68a;
-      border-radius: 30px;
-      padding: 15px 5px;
-      font-size: 50px;
-      font-weight: bold;
-      color: #5d4037;
-      text-align: center;
-      cursor: pointer;
-      transition: all 0.1s;
+      background: #fffbf0; border: 4px solid #d4b68a; border-radius: 30px; padding: 15px 5px;
+      font-size: 50px; font-weight: bold; color: #5d4037; text-align: center; cursor: pointer;
       box-shadow: 0 6px 12px rgba(0,0,0,0.08);
-      -webkit-tap-highlight-color: transparent;
     }
-    .option-card:active {
-      transform: scale(0.9);
-      background: #f5e7c8;
-    }
-    .option-card.correct-highlight {
-      background: #c8f7c5 !important;
-      border-color: #4caf50 !important;
-      animation: pop 0.35s;
-      transform: scale(1.02);
-    }
-    .option-card.wrong-flash {
-      background: #ffcdd2 !important;
-      border-color: #e53935 !important;
-      animation: shake 0.4s;
-    }
-    @keyframes shake {
-      0%,100%{ transform: translateX(0); }
-      25%{ transform: translateX(-8px); }
-      75%{ transform: translateX(8px); }
-    }
-    @keyframes pop {
-      0%{ transform: scale(1); }
-      50%{ transform: scale(1.08); }
-      100%{ transform: scale(1); }
-    }
-    .message-box {
-      font-size: 20px;
-      font-weight: 600;
-      color: #3e6b27;
-      margin: 8px 0;
-      min-height: 32px;
-    }
-    .tap-hint {
-      font-size: 16px;
-      color: #8b7a4c;
-      background: #fffae9;
-      padding: 4px 18px;
-      border-radius: 20px;
-      margin-bottom: 5px;
-    }
+    .option-card:active { transform: scale(0.9); background: #f5e7c8; }
+    .option-card.correct-highlight { background: #c8f7c5 !important; border-color: #4caf50 !important; animation: pop 0.35s; }
+    .option-card.wrong-flash { background: #ffcdd2 !important; border-color: #e53935 !important; animation: shake 0.4s; }
+    @keyframes shake { 0%,100%{ transform: translateX(0); } 25%{ transform: translateX(-8px); } 75%{ transform: translateX(8px); } }
+    @keyframes pop { 0%{ transform: scale(1); } 50%{ transform: scale(1.08); } 100%{ transform: scale(1); } }
+    .message-box { font-size: 20px; font-weight: 600; color: #3e6b27; margin: 8px 0; min-height: 32px; }
+    .tap-hint { font-size: 16px; color: #8b7a4c; background: #fffae9; padding: 4px 18px; border-radius: 20px; margin-bottom: 5px; }
     .btn {
-      background: #ffb84d;
-      border: none;
-      border-radius: 40px;
-      padding: 12px 28px;
-      font-size: 20px;
-      font-weight: 700;
-      color: #fff;
-      letter-spacing: 2px;
-      box-shadow: 0 6px 0 #d68c2c;
-      cursor: pointer;
-      transition: 0.1s;
-      margin: 5px;
-      -webkit-tap-highlight-color: transparent;
+      background: #ffb84d; border: none; border-radius: 40px; padding: 12px 28px; font-size: 20px;
+      font-weight: 700; color: #fff; letter-spacing: 2px; box-shadow: 0 6px 0 #d68c2c; cursor: pointer;
+      margin: 5px; -webkit-tap-highlight-color: transparent;
     }
-    .btn:active {
-      transform: translateY(4px);
-      box-shadow: 0 2px 0 #d68c2c;
-      background: #ffa32b;
-    }
-    .btn.back {
-      background: #b0c4de;
-      box-shadow: 0 6px 0 #7a8fa6;
-    }
-    .progress-bar {
-      width: 100%;
-      background: #e0d7c6;
-      border-radius: 20px;
-      height: 16px;
-      margin: 8px 0;
-      overflow: hidden;
-    }
-    .progress-fill {
-      height: 100%;
-      background: #f9a825;
-      border-radius: 20px;
-      transition: width 0.3s;
-    }
+    .btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #d68c2c; background: #ffa32b; }
+    .btn.back { background: #b0c4de; box-shadow: 0 6px 0 #7a8fa6; }
+    .progress-bar { width: 100%; background: #e0d7c6; border-radius: 20px; height: 16px; margin: 8px 0; overflow: hidden; }
+    .progress-fill { height: 100%; background: #f9a825; border-radius: 20px; transition: width 0.3s; }
     .star-rain {
-      position: fixed;
-      pointer-events: none;
-      font-size: 32px;
-      animation: starFall 1.2s ease-out forwards;
-      z-index: 100;
+      position: fixed; pointer-events: none; font-size: 32px; animation: starFall 1.2s ease-out forwards; z-index: 100;
     }
     @keyframes starFall {
-      0% { opacity: 1; transform: translateY(0) rotate(0deg); }
-      100% { opacity: 0; transform: translateY(160px) rotate(200deg); }
+      0% { opacity: 1; transform: translateY(0) rotate(0deg); } 100% { opacity: 0; transform: translateY(160px) rotate(200deg); }
     }
-    .toast {
-      position: fixed;
-      top: 30%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background: rgba(0,0,0,0.75);
-      color: #fff;
-      padding: 12px 30px;
-      border-radius: 40px;
-      font-size: 18px;
-      z-index: 300;
-      pointer-events: none;
-      animation: toastFade 2s forwards;
-    }
-    @keyframes toastFade {
-      0% { opacity: 0; transform: translate(-50%, -40%); }
-      15% { opacity: 1; transform: translate(-50%, -50%); }
-      80% { opacity: 1; transform: translate(-50%, -50%); }
-      100% { opacity: 0; transform: translate(-50%, -30%); }
+    .audio-status {
+      font-size: 14px; color: #8b7a4c; margin: 5px 0; background: #fffae9; border-radius: 20px; padding: 4px 16px;
     }
   </style>
 </head>
@@ -353,7 +107,7 @@
     <div style="font-size:60px;">🐑🌄</div>
     <div style="font-size:22px;font-weight:600;color:#5e4b2b;">小羊上山识字大冒险</div>
     <button class="big-btn" id="startBtn">开 始 冒 险</button>
-    <div id="soundStatus" style="font-size:15px;color:#999;"></div>
+    <div class="audio-status" id="audioStatus">🔊 音频准备就绪</div>
   </div>
 
   <div id="mapScreen" class="screen hidden">
@@ -370,17 +124,17 @@
   <div id="gameScreen" class="screen hidden">
     <div id="gameLevelInfo" style="font-weight:600;color:#6b4f32;font-size:18px;"></div>
     <div class="big-character" id="targetChar">羊</div>
-    <div class="tap-hint">👆 点汉字听发音（会有叮一声）</div>
+    <div class="tap-hint">👆 点汉字听发音</div>
     <div class="message-box" id="gameMessage">🐑 找找这个字吧！</div>
     <div class="options-row" id="optionsContainer"></div>
-    <div class="progress-bar" style="margin-top:15px;"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+    <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
     <button class="btn back hidden" id="finishGroupBtn" style="margin-top:15px;">🎉 完成本组</button>
   </div>
 
   <div id="quizScreen" class="screen hidden">
     <div style="font-size:24px;font-weight:700;color:#b45f06;">🏆 关卡小测验</div>
     <div class="big-character" id="quizTarget">山</div>
-    <div class="tap-hint">👆 点汉字听发音（会有叮一声）</div>
+    <div class="tap-hint">👆 点汉字听发音</div>
     <div class="message-box" id="quizMessage">🔊 听一听，找一找</div>
     <div class="options-row" id="quizOptions"></div>
     <button class="btn back hidden" id="quizCompleteBtn" style="margin-top:15px;">🎊 测验完成</button>
@@ -400,21 +154,13 @@
     ];
 
     const GROUP_SIZE = 5;
-    let currentLevelIndex = 0;
-    let currentGroupIndex = 0;
-    let currentWords = [];
-    let currentQuizWords = [];
-    let gameActive = false;
-    let quizActive = false;
-    let totalStars = 0;
-    let audioUnlocked = false;
+    let currentLevelIndex = 0, currentGroupIndex = 0;
+    let currentWords = [], currentQuizWords = [];
+    let gameActive = false, quizActive = false, totalStars = 0;
 
-    let progress = {
-      unlockedLevel: 1,
-      completedGroups: {},
-      stars: 0
-    };
+    let progress = { unlockedLevel: 1, completedGroups: {}, stars: 0 };
 
+    // DOM 元素
     const startScreen = document.getElementById('startScreen');
     const mapScreen = document.getElementById('mapScreen');
     const groupScreen = document.getElementById('groupScreen');
@@ -434,134 +180,57 @@
     const quizMessage = document.getElementById('quizMessage');
     const quizOptions = document.getElementById('quizOptions');
     const quizCompleteBtn = document.getElementById('quizCompleteBtn');
-    const soundStatus = document.getElementById('soundStatus');
+    const audioStatus = document.getElementById('audioStatus');
 
-    // ====== 音频核心 ======
+    // ====== 音频系统 ======
     let audioCtx = null;
-
     function createAudioContext() {
       if (audioCtx) return;
-      try {
-        const AudioContext = window.AudioContext || window.webkitAudioContext;
-        audioCtx = new AudioContext();
-      } catch(e) {}
+      try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
     }
-
-    function resumeAudio() {
-      if (audioCtx && audioCtx.state === 'suspended') {
-        audioCtx.resume();
-      }
-    }
-
-    // 全局触摸解锁
-    function initAudioOnFirstTouch() {
-      if (audioUnlocked) return;
-      createAudioContext();
-      resumeAudio();
+    function resumeAudio() { if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume(); }
+    // 触摸激活音频上下文
+    document.addEventListener('touchstart', () => {
+      createAudioContext(); resumeAudio();
       if (audioCtx) {
         const buf = audioCtx.createBuffer(1, 1, 22050);
         const src = audioCtx.createBufferSource();
-        src.buffer = buf;
-        src.connect(audioCtx.destination);
+        src.buffer = buf; src.connect(audioCtx.destination);
         src.start(0);
-        src.stop(audioCtx.currentTime + 0.001);
       }
-      audioUnlocked = true;
-    }
+    }, { passive: true, once: true });
 
-    document.addEventListener('touchstart', initAudioOnFirstTouch, { passive: true });
-    document.addEventListener('click', initAudioOnFirstTouch);
-
-    function playBeep(freq, type, duration = 0.15) {
-      if (!audioCtx) {
-        createAudioContext();
-        resumeAudio();
-      }
-      if (!audioCtx || audioCtx.state === 'suspended') resumeAudio();
+    function playBeep(freq, type, dur = 0.15) {
+      if (!audioCtx) createAudioContext();
+      resumeAudio();
       try {
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
-        osc.type = type;
-        osc.frequency.value = freq;
-        gain.gain.value = 0.25;
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-        osc.start();
-        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
-        osc.stop(audioCtx.currentTime + duration);
+        osc.type = type; osc.frequency.value = freq; gain.gain.value = 0.25;
+        osc.connect(gain); gain.connect(audioCtx.destination); osc.start();
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+        osc.stop(audioCtx.currentTime + dur);
       } catch(e) {}
     }
-
     function soundCorrect() { playBeep(660, 'sine', 0.2); setTimeout(()=>playBeep(880, 'sine', 0.25), 150); }
     function soundWrong() { playBeep(200, 'triangle', 0.3); }
 
-    // 语音朗读（总是尝试，不设永久禁用）
+    // 播放预录制音频文件
     function speak(text) {
-      // 先播放提示音，确保有反馈
-      playBeep(800, 'sine', 0.12);
-
-      // 如果还没有解锁音频，尝试解锁
-      if (!audioUnlocked) initAudioOnFirstTouch();
-
-      if (!window.speechSynthesis) {
-        showToast('🔇 浏览器不支持朗读');
-        return;
-      }
-
-      // 无论之前成功或失败，每次点击都重新朗读
-      window.speechSynthesis.cancel();
-      const utter = new SpeechSynthesisUtterance(text);
-      utter.lang = 'zh-CN';
-      utter.rate = 0.8;
-      utter.pitch = 1.1;
-      utter.volume = 1;
-
-      utter.onerror = () => {
-        // 如果出错，仅显示一次温柔提示（避免频繁弹出）
-        if (!sessionStorage.getItem('speech_warned')) {
-          showToast('🔇 当前无语音朗读，试试手机自带浏览器');
-          sessionStorage.setItem('speech_warned', '1');
-        }
-      };
-
-      window.speechSynthesis.speak(utter);
+      playBeep(800, 'sine', 0.12); // 叮咚提示音
+      const audio = new Audio('audio/' + text + '.mp3');
+      audio.volume = 1;
+      audio.play().catch(err => {
+        // 静默处理，不影响游戏
+        console.warn('音频播放失败: ' + text, err);
+      });
     }
 
-    function showToast(msg) {
-      const toast = document.createElement('div');
-      toast.className = 'toast';
-      toast.textContent = msg;
-      document.body.appendChild(toast);
-      setTimeout(() => toast.remove(), 2100);
+    // 视觉反馈
+    function triggerTouchFeedback(el) {
+      el.classList.add('touched');
+      setTimeout(() => el.classList.remove('touched'), 200);
     }
-
-    function triggerTouchFeedback(element) {
-      element.classList.add('touched');
-      setTimeout(() => element.classList.remove('touched'), 200);
-    }
-
-    // 启动按钮
-    document.getElementById('startBtn').addEventListener('click', () => {
-      initAudioOnFirstTouch();
-      playBeep(1000, 'sine', 0.3);
-      // 预热语音
-      if (window.speechSynthesis) {
-        window.speechSynthesis.cancel();
-        const test = new SpeechSynthesisUtterance('小羊');
-        test.lang = 'zh-CN';
-        test.volume = 1;
-        test.onerror = () => {
-          soundStatus.textContent = '🔇 语音可能不可用，但音效正常';
-        };
-        test.onstart = () => {
-          soundStatus.textContent = '✅ 声音已开启';
-        };
-        window.speechSynthesis.speak(test);
-      }
-      startScreen.classList.add('hidden');
-      mapScreen.classList.remove('hidden');
-      renderMap();
-    });
 
     // 进度管理
     function saveProgress() {
@@ -596,40 +265,51 @@
       updateStarDisplay();
       saveProgress();
     }
-    function isGroupCompleted(levelIdx, groupIdx) {
-      return progress.completedGroups[levelIdx] && progress.completedGroups[levelIdx].includes(groupIdx);
+    function isGroupCompleted(li, gi) {
+      return progress.completedGroups[li] && progress.completedGroups[li].includes(gi);
     }
-    function markGroupCompleted(levelIdx, groupIdx) {
-      if (!progress.completedGroups[levelIdx]) progress.completedGroups[levelIdx] = [];
-      if (!progress.completedGroups[levelIdx].includes(groupIdx)) {
-        progress.completedGroups[levelIdx].push(groupIdx);
+    function markGroupCompleted(li, gi) {
+      if (!progress.completedGroups[li]) progress.completedGroups[li] = [];
+      if (!progress.completedGroups[li].includes(gi)) {
+        progress.completedGroups[li].push(gi);
         saveProgress();
       }
     }
-    function getTotalGroups(levelIdx) {
-      return Math.ceil(LEVELS[levelIdx].words.length / GROUP_SIZE);
-    }
-    function isLevelFullyCompleted(levelIdx) {
-      const total = getTotalGroups(levelIdx);
-      for (let i = 0; i < total; i++) {
-        if (!isGroupCompleted(levelIdx, i)) return false;
-      }
+    function getTotalGroups(li) { return Math.ceil(LEVELS[li].words.length / GROUP_SIZE); }
+    function isLevelFullyCompleted(li) {
+      for (let i = 0; i < getTotalGroups(li); i++) if (!isGroupCompleted(li, i)) return false;
       return true;
     }
     function spawnStars(count = 8) {
       for (let i = 0; i < count; i++) {
         setTimeout(() => {
-          const star = document.createElement('div');
-          star.className = 'star-rain';
-          star.textContent = '⭐';
-          star.style.left = Math.random() * 80 + '%';
-          star.style.top = Math.random() * 40 + '%';
-          document.body.appendChild(star);
-          setTimeout(() => star.remove(), 1300);
+          const s = document.createElement('div');
+          s.className = 'star-rain';
+          s.textContent = '⭐';
+          s.style.left = Math.random() * 80 + '%';
+          s.style.top = Math.random() * 40 + '%';
+          document.body.appendChild(s);
+          setTimeout(() => s.remove(), 1300);
         }, i * 80);
       }
     }
 
+    // 启动按钮
+    document.getElementById('startBtn').addEventListener('click', () => {
+      // 播放测试音，验证音频路径
+      const testAudio = new Audio('audio/一.mp3');
+      testAudio.volume = 0.3;
+      testAudio.play().then(() => {
+        audioStatus.textContent = '✅ 音频系统正常，尽情玩吧！';
+      }).catch(() => {
+        audioStatus.textContent = '⚠️ 未找到音频文件，但叮咚音效正常';
+      });
+      startScreen.classList.add('hidden');
+      mapScreen.classList.remove('hidden');
+      renderMap();
+    });
+
+    // 渲染地图
     function renderMap() {
       levelGrid.innerHTML = '';
       LEVELS.forEach((level, idx) => {
@@ -644,19 +324,15 @@
           <div class="level-stars">${completed ? '🌟 已通关' : (unlocked ? '🔓 可挑战' : '🔒 未解锁')}</div>
         `;
         card.addEventListener('click', () => {
-          initAudioOnFirstTouch();
-          if (!unlocked) {
-            speak('这一关还没解锁哦，继续加油吧！');
-            return;
-          }
+          if (!unlocked) { speak('这一关还没解锁哦，继续加油吧！'); return; }
           openLevel(idx);
         });
         levelGrid.appendChild(card);
       });
     }
 
-    function openLevel(levelIdx) {
-      currentLevelIndex = levelIdx;
+    function openLevel(li) {
+      currentLevelIndex = li;
       mapScreen.classList.add('hidden');
       groupScreen.classList.remove('hidden');
       renderGroups();
@@ -665,9 +341,9 @@
     function renderGroups() {
       const level = LEVELS[currentLevelIndex];
       groupTitle.textContent = `🐑 ${level.name} · 第${currentLevelIndex+1}关`;
-      const totalGroups = getTotalGroups(currentLevelIndex);
+      const total = getTotalGroups(currentLevelIndex);
       groupContainer.innerHTML = '';
-      for (let i = 0; i < totalGroups; i++) {
+      for (let i = 0; i < total; i++) {
         const btn = document.createElement('div');
         btn.className = 'group-btn';
         btn.textContent = i+1;
@@ -677,45 +353,35 @@
           btn.classList.add('locked');
         }
         btn.addEventListener('click', () => {
-          initAudioOnFirstTouch();
-          if (btn.classList.contains('locked')) {
-            speak('先完成前面的一组吧');
-            return;
-          }
+          if (btn.classList.contains('locked')) { speak('先完成前面的一组吧'); return; }
           startGroupGame(i);
         });
         groupContainer.appendChild(btn);
       }
     }
 
-    function getGroupWords(levelIdx, groupIdx) {
-      const all = LEVELS[levelIdx].words;
-      const start = groupIdx * GROUP_SIZE;
-      return all.slice(start, start + GROUP_SIZE);
+    function getGroupWords(li, gi) {
+      const all = LEVELS[li].words;
+      return all.slice(gi * GROUP_SIZE, gi * GROUP_SIZE + GROUP_SIZE);
     }
 
-    function startGroupGame(groupIdx) {
-      currentGroupIndex = groupIdx;
-      currentWords = [...getGroupWords(currentLevelIndex, groupIdx)];
+    function startGroupGame(gi) {
+      currentGroupIndex = gi;
+      currentWords = [...getGroupWords(currentLevelIndex, gi)];
       gameActive = true;
       groupScreen.classList.add('hidden');
       gameScreen.classList.remove('hidden');
       finishGroupBtn.classList.add('hidden');
-      gameLevelInfo.textContent = `📖 第${currentLevelIndex+1}关 · 第${groupIdx+1}组`;
+      gameLevelInfo.textContent = `📖 第${currentLevelIndex+1}关 · 第${gi+1}组`;
       progressFill.style.width = '0%';
       nextGameRound();
     }
 
-    let gameRoundWords = [];
-    let gameRoundIndex = 0;
-
+    let gameRoundWords = [], gameRoundIndex = 0;
     function nextGameRound() {
       if (!gameActive) return;
       if (gameRoundWords.length === 0 || gameRoundIndex >= gameRoundWords.length) {
-        if (currentWords.length === 0) {
-          finishGroup();
-          return;
-        }
+        if (currentWords.length === 0) { finishGroup(); return; }
         gameRoundWords = [...currentWords];
         shuffleArray(gameRoundWords);
         gameRoundIndex = 0;
@@ -726,7 +392,7 @@
 
     function showGameWord(word) {
       targetChar.textContent = word;
-      gameMessage.textContent = '🐑 点一点相同的字吧！';
+      gameMessage.textContent = '🐑 找找相同的字吧！';
       const correct = word;
       const distractors = getDistractors(correct, 3, currentLevelIndex);
       const options = [correct, ...distractors];
@@ -739,9 +405,7 @@
         card.addEventListener('click', (e) => handleGameOption(card, opt, correct));
         optionsContainer.appendChild(card);
       });
-      const progressPercent = (gameRoundIndex / gameRoundWords.length) * 100;
-      progressFill.style.width = progressPercent + '%';
-
+      progressFill.style.width = ((gameRoundIndex / gameRoundWords.length) * 100) + '%';
       targetChar.onclick = () => {
         triggerTouchFeedback(targetChar);
         speak(targetChar.textContent);
@@ -750,7 +414,6 @@
 
     function handleGameOption(card, selected, correct) {
       if (!gameActive) return;
-      initAudioOnFirstTouch();
       const allCards = document.querySelectorAll('#optionsContainer .option-card');
       if (selected === correct) {
         card.classList.add('correct-highlight');
@@ -762,19 +425,14 @@
         if (idx > -1) currentWords.splice(idx, 1);
         gameRoundIndex++;
         setTimeout(() => {
-          if (currentWords.length === 0) {
-            finishGroup();
-          } else {
-            nextGameRound();
-          }
+          if (currentWords.length === 0) finishGroup();
+          else nextGameRound();
         }, 900);
       } else {
         card.classList.add('wrong-flash');
         soundWrong();
         gameMessage.textContent = '🤔 再试试看！';
-        allCards.forEach(c => {
-          if (c.textContent === correct) c.classList.add('correct-highlight');
-        });
+        allCards.forEach(c => { if (c.textContent === correct) c.classList.add('correct-highlight'); });
         speak(correct);
         setTimeout(() => {
           card.classList.remove('wrong-flash');
@@ -801,12 +459,8 @@
       speak('太厉害了，这组字你都认识啦！');
       finishGroupBtn.onclick = () => {
         gameScreen.classList.add('hidden');
-        if (isLevelFullyCompleted(currentLevelIndex)) {
-          startLevelQuiz();
-        } else {
-          groupScreen.classList.remove('hidden');
-          renderGroups();
-        }
+        if (isLevelFullyCompleted(currentLevelIndex)) startLevelQuiz();
+        else { groupScreen.classList.remove('hidden'); renderGroups(); }
       };
     }
 
@@ -826,10 +480,7 @@
     let quizIndex = 0;
     function nextQuizRound() {
       if (!quizActive) return;
-      if (quizIndex >= currentQuizWords.length) {
-        finishQuiz();
-        return;
-      }
+      if (quizIndex >= currentQuizWords.length) { finishQuiz(); return; }
       const word = currentQuizWords[quizIndex];
       quizTarget.textContent = word;
       quizMessage.textContent = '🔊 听一听，找一找这个字';
@@ -853,7 +504,6 @@
 
     function handleQuizOption(card, selected, correct) {
       if (!quizActive) return;
-      initAudioOnFirstTouch();
       const allCards = document.querySelectorAll('#quizOptions .option-card');
       if (selected === correct) {
         card.classList.add('correct-highlight');
@@ -866,9 +516,7 @@
         card.classList.add('wrong-flash');
         soundWrong();
         quizMessage.textContent = '💡 这个是 ' + correct;
-        allCards.forEach(c => {
-          if (c.textContent === correct) c.classList.add('correct-highlight');
-        });
+        allCards.forEach(c => { if (c.textContent === correct) c.classList.add('correct-highlight'); });
         speak(correct);
         setTimeout(() => {
           card.classList.remove('wrong-flash');
@@ -897,9 +545,9 @@
       };
     }
 
-    function getDistractors(correct, count, levelIdx) {
+    function getDistractors(correct, count, li) {
       const pool = [];
-      for (let i = Math.max(0, levelIdx-1); i <= Math.min(LEVELS.length-1, levelIdx+1); i++) {
+      for (let i = Math.max(0, li-1); i <= Math.min(LEVELS.length-1, li+1); i++) {
         pool.push(...LEVELS[i].words.filter(w => w !== correct));
       }
       const unique = [...new Set(pool)];
