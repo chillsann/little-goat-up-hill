@@ -82,6 +82,34 @@
     .hidden {
       display: none !important;
     }
+    /* 启动画面 */
+    .start-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+    }
+    .big-btn {
+      background: #ffb84d;
+      border: none;
+      border-radius: 50px;
+      padding: 16px 40px;
+      font-size: 28px;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: 4px;
+      box-shadow: 0 10px 0 #d68c2c;
+      cursor: pointer;
+      transition: all 0.1s;
+      margin: 10px 0;
+    }
+    .big-btn:active {
+      transform: translateY(6px);
+      box-shadow: 0 4px 0 #d68c2c;
+      background: #ffa32b;
+    }
+    /* 游戏主界面 */
     .level-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
@@ -101,30 +129,13 @@
       position: relative;
     }
     .level-card:active {
-      transform: scale(0.96);
+      transform: scale(0.94);
+      background: #fffef0;
     }
     .level-card.locked {
       filter: grayscale(0.5);
       background: #e9e3d0;
       color: #aaa;
-      pointer-events: auto;
-    }
-    .level-card .level-emoji {
-      font-size: 42px;
-    }
-    .level-card .level-name {
-      font-weight: 700;
-      font-size: 18px;
-      color: #5e4b2b;
-      margin: 5px 0;
-    }
-    .level-card .level-stars {
-      font-size: 16px;
-      color: #f7b731;
-    }
-    .lock-icon {
-      font-size: 28px;
-      color: #b0a58d;
     }
     .group-grid {
       display: flex;
@@ -147,7 +158,12 @@
       justify-content: center;
       cursor: pointer;
       box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-      transition: 0.2s;
+      transition: 0.15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .group-btn:active {
+      transform: scale(0.9);
+      background: #f7d98c;
     }
     .group-btn.completed {
       background: #b2e0a8;
@@ -170,28 +186,33 @@
       color: #999;
     }
     .big-character {
-      font-size: 110px;
+      font-size: 100px;
       font-weight: 900;
       color: #4e342e;
       background: #fff3e0;
       border-radius: 30px;
-      padding: 0 25px;
+      padding: 10px 30px;
       margin: 10px 0;
       box-shadow: 0 10px 20px rgba(0,0,0,0.1);
       line-height: 1.2;
       text-align: center;
       min-width: 140px;
       cursor: pointer;
-      position: relative;
       user-select: none;
+      transition: transform 0.1s, background 0.1s;
+      position: relative;
+    }
+    .big-character:active {
+      transform: scale(0.94);
+      background: #ffe0b2;
     }
     .big-character::after {
       content: "🔊";
-      font-size: 24px;
+      font-size: 20px;
       position: absolute;
-      bottom: 8px;
-      right: 12px;
-      opacity: 0.6;
+      bottom: 5px;
+      right: 8px;
+      opacity: 0.5;
       pointer-events: none;
     }
     .options-row {
@@ -199,32 +220,36 @@
       grid-template-columns: 1fr 1fr;
       gap: 15px;
       width: 100%;
-      margin-top: 20px;
+      margin-top: 15px;
     }
     .option-card {
       background: #fffbf0;
       border: 4px solid #d4b68a;
       border-radius: 30px;
-      padding: 18px 10px;
-      font-size: 55px;
+      padding: 15px 5px;
+      font-size: 50px;
       font-weight: bold;
       color: #5d4037;
       text-align: center;
       cursor: pointer;
-      transition: all 0.15s;
+      transition: all 0.1s;
       box-shadow: 0 6px 12px rgba(0,0,0,0.08);
+      -webkit-tap-highlight-color: transparent;
     }
     .option-card:active {
-      transform: scale(0.94);
+      transform: scale(0.9);
+      background: #f5e7c8;
+      border-color: #ba9a6a;
     }
     .option-card.correct-highlight {
-      background: #c8f7c5;
-      border-color: #4caf50;
-      animation: pop 0.4s;
+      background: #c8f7c5 !important;
+      border-color: #4caf50 !important;
+      animation: pop 0.35s;
+      transform: scale(1.02);
     }
     .option-card.wrong-flash {
-      background: #ffcdd2;
-      border-color: #e53935;
+      background: #ffcdd2 !important;
+      border-color: #e53935 !important;
       animation: shake 0.4s;
     }
     @keyframes shake {
@@ -238,19 +263,11 @@
       100%{ transform: scale(1); }
     }
     .message-box {
-      font-size: 22px;
+      font-size: 20px;
       font-weight: 600;
       color: #3e6b27;
-      margin: 12px 0;
-      min-height: 36px;
-    }
-    .sound-hint {
-      font-size: 16px;
-      color: #8b7a4c;
-      margin: -5px 0 10px;
-      background: #fffae9;
-      padding: 4px 16px;
-      border-radius: 20px;
+      margin: 8px 0;
+      min-height: 32px;
     }
     .btn {
       background: #ffb84d;
@@ -265,10 +282,12 @@
       cursor: pointer;
       transition: 0.1s;
       margin: 5px;
+      -webkit-tap-highlight-color: transparent;
     }
     .btn:active {
       transform: translateY(4px);
       box-shadow: 0 2px 0 #d68c2c;
+      background: #ffa32b;
     }
     .btn.back {
       background: #b0c4de;
@@ -299,6 +318,14 @@
       0% { opacity: 1; transform: translateY(0) rotate(0deg); }
       100% { opacity: 0; transform: translateY(160px) rotate(200deg); }
     }
+    .tap-hint {
+      font-size: 16px;
+      color: #8b7a4c;
+      background: #fffae9;
+      padding: 4px 18px;
+      border-radius: 20px;
+      margin-bottom: 5px;
+    }
   </style>
 </head>
 <body>
@@ -309,7 +336,15 @@
   </div>
   <div class="star-counter" id="starDisplay">⭐ 0 颗星星</div>
 
-  <div id="mapScreen" class="screen">
+  <!-- 启动画面（必须用户点击才能解锁声音） -->
+  <div id="startScreen" class="start-screen">
+    <div style="font-size:60px;">🐑🌄</div>
+    <div style="font-size:22px;font-weight:600;color:#5e4b2b;">小羊上山识字大冒险</div>
+    <button class="big-btn" id="startBtn">开 始 冒 险</button>
+    <div style="font-size:16px;color:#8b7a4c;">点击按钮后声音就启动啦 🔊</div>
+  </div>
+
+  <div id="mapScreen" class="screen hidden">
     <div style="font-size:18px;font-weight:600;color:#5e4b2b;margin-bottom:5px;">🌄 选择关卡</div>
     <div class="level-grid" id="levelGrid"></div>
   </div>
@@ -323,7 +358,7 @@
   <div id="gameScreen" class="screen hidden">
     <div id="gameLevelInfo" style="font-weight:600;color:#6b4f32;font-size:18px;"></div>
     <div class="big-character" id="targetChar">羊</div>
-    <div class="sound-hint">👆 点一点汉字听发音</div>
+    <div class="tap-hint">👆 点汉字听发音</div>
     <div class="message-box" id="gameMessage">🐑 找找这个字吧！</div>
     <div class="options-row" id="optionsContainer"></div>
     <div class="progress-bar" style="margin-top:15px;"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
@@ -333,7 +368,7 @@
   <div id="quizScreen" class="screen hidden">
     <div style="font-size:24px;font-weight:700;color:#b45f06;">🏆 关卡小测验</div>
     <div class="big-character" id="quizTarget">山</div>
-    <div class="sound-hint">👆 点一点汉字听发音</div>
+    <div class="tap-hint">👆 点汉字听发音</div>
     <div class="message-box" id="quizMessage">🔊 听一听，找一找</div>
     <div class="options-row" id="quizOptions"></div>
     <button class="btn back hidden" id="quizCompleteBtn" style="margin-top:15px;">🎊 测验完成</button>
@@ -360,6 +395,7 @@
     let gameActive = false;
     let quizActive = false;
     let totalStars = 0;
+    let audioUnlocked = false; // 声音是否已解锁
 
     let progress = {
       unlockedLevel: 1,
@@ -367,6 +403,7 @@
       stars: 0
     };
 
+    const startScreen = document.getElementById('startScreen');
     const mapScreen = document.getElementById('mapScreen');
     const groupScreen = document.getElementById('groupScreen');
     const gameScreen = document.getElementById('gameScreen');
@@ -392,16 +429,26 @@
       try {
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
       } catch(e) {}
-      // 激活语音合成引擎（避免浏览器阻止）
+    }
+
+    function unlockAudio() {
+      if (audioUnlocked) return;
+      initAudio();
+      // 播放一个极短的无声提示来解锁音频上下文（移动端要求）
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      // 语音合成预热：朗读一次，但音量调低，确保被浏览器记录为用户手势触发
       if (window.speechSynthesis) {
         window.speechSynthesis.cancel();
-        // 朗读一个短词来“预热”
         const warmUp = new SpeechSynthesisUtterance('小羊');
         warmUp.lang = 'zh-CN';
-        warmUp.volume = 0.1;
+        warmUp.volume = 0.8;
         window.speechSynthesis.speak(warmUp);
       }
+      audioUnlocked = true;
     }
+
     function playBeep(freq, type, duration) {
       if (!audioCtx) return;
       const osc = audioCtx.createOscillator();
@@ -418,10 +465,9 @@
     function soundCorrect() { playBeep(660, 'sine', 0.2); setTimeout(()=>playBeep(880, 'sine', 0.25), 150); }
     function soundWrong() { playBeep(200, 'triangle', 0.3); }
 
-    // 语音朗读（增强版）
-    function speak(text, force = false) {
-      if (!window.speechSynthesis) return;
-      // 取消当前队列中的语音
+    // 语音朗读（强制在用户手势中调用）
+    function speak(text) {
+      if (!window.speechSynthesis || !audioUnlocked) return;
       window.speechSynthesis.cancel();
       const utter = new SpeechSynthesisUtterance(text);
       utter.lang = 'zh-CN';
@@ -517,7 +563,7 @@
           <div class="level-stars">${completed ? '🌟 已通关' : (unlocked ? '🔓 可挑战' : '🔒 未解锁')}</div>
         `;
         card.addEventListener('click', () => {
-          initAudio();
+          if (!audioUnlocked) return;
           if (!unlocked) {
             speak('这一关还没解锁哦，继续加油吧！');
             return;
@@ -550,7 +596,7 @@
           btn.classList.add('locked');
         }
         btn.addEventListener('click', () => {
-          initAudio();
+          if (!audioUnlocked) return;
           if (btn.classList.contains('locked')) {
             speak('先完成前面的一组吧');
             return;
@@ -599,8 +645,6 @@
 
     function showGameWord(word) {
       targetChar.textContent = word;
-      // 自动朗读
-      speak(word);
       gameMessage.textContent = '🐑 点一点相同的字吧！';
       const correct = word;
       const distractors = getDistractors(correct, 3, currentLevelIndex);
@@ -616,19 +660,21 @@
       });
       const progressPercent = (gameRoundIndex / gameRoundWords.length) * 100;
       progressFill.style.width = progressPercent + '%';
-      
-      // 绑定点击汉字重新朗读
-      targetChar.onclick = () => speak(targetChar.textContent);
+
+      // 汉字点击朗读
+      targetChar.onclick = () => {
+        if (audioUnlocked) speak(targetChar.textContent);
+      };
     }
 
     function handleGameOption(card, selected, correct) {
-      if (!gameActive) return;
+      if (!gameActive || !audioUnlocked) return;
       const allCards = document.querySelectorAll('#optionsContainer .option-card');
       if (selected === correct) {
         card.classList.add('correct-highlight');
         gameMessage.textContent = '🎉 太棒了！就是这个字！';
         soundCorrect();
-        speak(correct + '，对了！');
+        speak(correct);
         spawnStars(6);
         const idx = currentWords.indexOf(correct);
         if (idx > -1) currentWords.splice(idx, 1);
@@ -639,19 +685,19 @@
           } else {
             nextGameRound();
           }
-        }, 1000);
+        }, 900);
       } else {
         card.classList.add('wrong-flash');
         soundWrong();
-        gameMessage.textContent = '🤔 再试试看，那个字是？';
+        gameMessage.textContent = '🤔 再试试看！';
         allCards.forEach(c => {
-          if (c.textContent === correct) {
-            c.classList.add('correct-highlight');
-            setTimeout(() => c.classList.remove('correct-highlight'), 1800);
-          }
+          if (c.textContent === correct) c.classList.add('correct-highlight');
         });
-        speak('这个是' + correct);
-        setTimeout(() => card.classList.remove('wrong-flash'), 500);
+        speak(correct);
+        setTimeout(() => {
+          card.classList.remove('wrong-flash');
+          allCards.forEach(c => c.classList.remove('correct-highlight'));
+        }, 1500);
         const correctCard = Array.from(allCards).find(c => c.textContent === correct);
         if (correctCard) {
           correctCard.addEventListener('click', function handler() {
@@ -704,7 +750,6 @@
       }
       const word = currentQuizWords[quizIndex];
       quizTarget.textContent = word;
-      speak(word);
       quizMessage.textContent = '🔊 听一听，找一找这个字';
       const correct = word;
       const distractors = getDistractors(correct, 3, currentLevelIndex);
@@ -718,12 +763,14 @@
         card.addEventListener('click', (e) => handleQuizOption(card, opt, correct));
         quizOptions.appendChild(card);
       });
-      // 点击汉字重新朗读
-      quizTarget.onclick = () => speak(quizTarget.textContent);
+      // 点击汉字朗读
+      quizTarget.onclick = () => {
+        if (audioUnlocked) speak(quizTarget.textContent);
+      };
     }
 
     function handleQuizOption(card, selected, correct) {
-      if (!quizActive) return;
+      if (!quizActive || !audioUnlocked) return;
       const allCards = document.querySelectorAll('#quizOptions .option-card');
       if (selected === correct) {
         card.classList.add('correct-highlight');
@@ -731,11 +778,11 @@
         quizMessage.textContent = '✅ 答对了！';
         speak(correct);
         quizIndex++;
-        setTimeout(nextQuizRound, 900);
+        setTimeout(nextQuizRound, 800);
       } else {
         card.classList.add('wrong-flash');
         soundWrong();
-        quizMessage.textContent = '💡 这个是 ' + correct + ' ，记住哦';
+        quizMessage.textContent = '💡 这个是 ' + correct;
         allCards.forEach(c => {
           if (c.textContent === correct) c.classList.add('correct-highlight');
         });
@@ -745,7 +792,7 @@
           allCards.forEach(c => c.classList.remove('correct-highlight'));
           quizIndex++;
           nextQuizRound();
-        }, 2000);
+        }, 1800);
       }
     }
 
@@ -784,17 +831,30 @@
       }
     }
 
+    // 返回地图
     document.getElementById('backToMapBtn').addEventListener('click', () => {
       groupScreen.classList.add('hidden');
       mapScreen.classList.remove('hidden');
       renderMap();
     });
 
+    // 启动按钮：解锁声音 + 进入地图
+    document.getElementById('startBtn').addEventListener('click', () => {
+      unlockAudio();
+      startScreen.classList.add('hidden');
+      mapScreen.classList.remove('hidden');
+      renderMap();
+      // 提示音已开启
+      setTimeout(() => {
+        if (audioUnlocked) speak('小羊上山识字冒险开始啦！');
+      }, 300);
+    });
+
     // 初始化
     loadProgress();
-    renderMap();
-    document.body.addEventListener('touchstart', initAudio, { once: true });
-    document.body.addEventListener('click', initAudio, { once: true });
+    // 默认显示启动画面
+    startScreen.classList.remove('hidden');
+    mapScreen.classList.add('hidden');
   })();
 </script>
 </body>
