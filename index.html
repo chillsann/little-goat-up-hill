@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0, minimum-scale=1.0, viewport-fit=cover">
+  <title>小羊上山识字大冒险 · 有声版</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      font-family: "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+    }
+    body {
+      background: linear-gradient(180deg, #b8e4b0 0%, #d4f0d0 30%, #fef9e4 70%, #ffe6b3 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 10px;
+      margin: 0;
+    }
+    .game-container {
+      width: 100%;
+      max-width: 500px;
+      background: rgba(255, 251, 235, 0.85);
+      backdrop-filter: blur(8px);
+      border-radius: 40px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.15), 0 8px 16px rgba(0,0,0,0.1);
+      padding: 20px 15px 25px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+      min-height: 90vh;
+    }
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 15px;
+      width: 100%;
+      justify-content: center;
+    }
+    .sheep-icon {
+      font-size: 42px;
+      animation: bounce 1.2s infinite alternate;
+    }
+    @keyframes bounce {
+      0% { transform: translateY(0); }
+      100% { transform: translateY(-8px); }
+    }
+    .title {
+      font-size: 28px;
+      font-weight: 800;
+      color: #4a6b2f;
+      text-shadow: 2px 2px 0 #fff;
+      letter-spacing: 2px;
+    }
+    .star-counter {
+      background: #ffe484;
+      border-radius: 30px;
+      padding: 6px 18px;
+      font-size: 18px;
+      font-weight: bold;
+      color: #7b5e3b;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.08);
+      margin-bottom: 10px;
+    }
+    .screen {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex: 1;
+    }
+    .hidden {
+      display: none !important;
+    }
+    .level-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 15px;
+      width: 100%;
+      margin-top: 10px;
+    }
+    .level-card {
+      background: #ffffffdd;
+      border-radius: 25px;
+      padding: 15px 8px;
+      text-align: center;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+      transition: transform 0.2s;
+      cursor: pointer;
+      border: 3px solid #e0d7b0;
+      position: relative;
+    }
+    .level-card:active {
+      transform: scale(0.96);
+    }
+    .level-card.locked {
+      filter: grayscale(0.5);
+      background: #e9e3d0;
+      color: #aaa;
+      pointer-events: auto;
+    }
+    .level-card .level-emoji {
+      font-size: 42px;
+    }
+    .level-card .level-name {
+      font-weight: 700;
+      font-size: 18px;
+      color: #5e4b2b;
+      margin: 5px 0;
+    }
+    .level-card .level-stars {
+      font-size: 16px;
+      color: #f7b731;
+    }
+    .lock-icon {
+      font-size: 28px;
+      color: #b0a58d;
+    }
+    .group-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: center;
+      margin: 20px 0;
+    }
+    .group-btn {
+      width: 58px;
+      height: 58px;
+      border-radius: 50%;
+      background: #ffe9c4;
+      border: 3px solid #deb887;
+      font-weight: bold;
+      font-size: 18px;
+      color: #6b4f32;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      transition: 0.2s;
+    }
+    .group-btn.completed {
+      background: #b2e0a8;
+      border-color: #6b9e4a;
+      color: #2d5720;
+      position: relative;
+    }
+    .group-btn.completed::after {
+      content: "⭐";
+      font-size: 20px;
+      position: absolute;
+      top: -8px;
+      right: -6px;
+    }
+    .group-btn.locked {
+      opacity: 0.5;
+      pointer-events: none;
+      background: #ddd8cb;
+      border-color: #bbb;
+      color: #999;
+    }
+    .big-character {
+      font-size: 110px;
+      font-weight: 900;
+      color: #4e342e;
+      background: #fff3e0;
+      border-radius: 30px;
+      padding: 0 25px;
+      margin: 10px 0;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+      line-height: 1.2;
+      text-align: center;
+      min-width: 140px;
+      cursor: pointer;
+      position: relative;
+      user-select: none;
+    }
+    .big-character::after {
+      content: "🔊";
+      font-size: 24px;
+      position: absolute;
+      bottom: 8px;
+      right: 12px;
+      opacity: 0.6;
+      pointer-events: none;
+    }
+    .options-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      width: 100%;
+      margin-top: 20px;
+    }
+    .option-card {
+      background: #fffbf0;
+      border: 4px solid #d4b68a;
+      border-radius: 30px;
+      padding: 18px 10px;
+      font-size: 55px;
+      font-weight: bold;
+      color: #5d4037;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.15s;
+      box-shadow: 0 6px 12px rgba(0,0,0,0.08);
+    }
+    .option-card:active {
+      transform: scale(0.94);
+    }
+    .option-card.correct-highlight {
+      background: #c8f7c5;
+      border-color: #4caf50;
+      animation: pop 0.4s;
+    }
+    .option-card.wrong-flash {
+      background: #ffcdd2;
+      border-color: #e53935;
+      animation: shake 0.4s;
+    }
+    @keyframes shake {
+      0%,100%{ transform: translateX(0); }
+      25%{ transform: translateX(-8px); }
+      75%{ transform: translateX(8px); }
+    }
+    @keyframes pop {
+      0%{ transform: scale(1); }
+      50%{ transform: scale(1.08); }
+      100%{ transform: scale(1); }
+    }
+    .message-box {
+      font-size: 22px;
+      font-weight: 600;
+      color: #3e6b27;
+      margin: 12px 0;
+      min-height: 36px;
+    }
+    .sound-hint {
+      font-size: 16px;
+      color: #8b7a4c;
+      margin: -5px 0 10px;
+      background: #fffae9;
+      padding: 4px 16px;
+      border-radius: 20px;
+    }
+    .btn {
+      background: #ffb84d;
+      border: none;
+      border-radius: 40px;
+      padding: 12px 28px;
+      font-size: 20px;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: 2px;
+      box-shadow: 0 6px 0 #d68c2c;
+      cursor: pointer;
+      transition: 0.1s;
+      margin: 5px;
+    }
+    .btn:active {
+      transform: translateY(4px);
+      box-shadow: 0 2px 0 #d68c2c;
+    }
+    .btn.back {
+      background: #b0c4de;
+      box-shadow: 0 6px 0 #7a8fa6;
+    }
+    .progress-bar {
+      width: 100%;
+      background: #e0d7c6;
+      border-radius: 20px;
+      height: 16px;
+      margin: 8px 0;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: #f9a825;
+      border-radius: 20px;
+      transition: width 0.3s;
+    }
+    .star-rain {
+      position: fixed;
+      pointer-events: none;
+      font-size: 32px;
+      animation: starFall 1.2s ease-out forwards;
+      z-index: 100;
+    }
+    @keyframes starFall {
+      0% { opacity: 1; transform: translateY(0) rotate(0deg); }
+      100% { opacity: 0; transform: translateY(160px) rotate(200deg); }
+    }
+  </style>
+</head>
+<body>
+<div class="game-container" id="app">
+  <div class="header">
+    <span class="sheep-icon">🐑</span>
+    <span class="title">小羊上山</span>
+  </div>
+  <div class="star-counter" id="starDisplay">⭐ 0 颗星星</div>
+
+  <div id="mapScreen" class="screen">
+    <div style="font-size:18px;font-weight:600;color:#5e4b2b;margin-bottom:5px;">🌄 选择关卡</div>
+    <div class="level-grid" id="levelGrid"></div>
+  </div>
+
+  <div id="groupScreen" class="screen hidden">
+    <div id="groupTitle" style="font-size:22px;font-weight:700;color:#3e5e24;margin:5px 0;"></div>
+    <div class="group-grid" id="groupContainer"></div>
+    <button class="btn back" id="backToMapBtn">↩ 返回地图</button>
+  </div>
+
+  <div id="gameScreen" class="screen hidden">
+    <div id="gameLevelInfo" style="font-weight:600;color:#6b4f32;font-size:18px;"></div>
+    <div class="big-character" id="targetChar">羊</div>
+    <div class="sound-hint">👆 点一点汉字听发音</div>
+    <div class="message-box" id="gameMessage">🐑 找找这个字吧！</div>
+    <div class="options-row" id="optionsContainer"></div>
+    <div class="progress-bar" style="margin-top:15px;"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+    <button class="btn back hidden" id="finishGroupBtn" style="margin-top:15px;">🎉 完成本组</button>
+  </div>
+
+  <div id="quizScreen" class="screen hidden">
+    <div style="font-size:24px;font-weight:700;color:#b45f06;">🏆 关卡小测验</div>
+    <div class="big-character" id="quizTarget">山</div>
+    <div class="sound-hint">👆 点一点汉字听发音</div>
+    <div class="message-box" id="quizMessage">🔊 听一听，找一找</div>
+    <div class="options-row" id="quizOptions"></div>
+    <button class="btn back hidden" id="quizCompleteBtn" style="margin-top:15px;">🎊 测验完成</button>
+  </div>
+</div>
+
+<script>
+  (function() {
+    // ---------- 字库 ----------
+    const LEVELS = [
+      { name: "青草坡", emoji: "🌱", words: ["一","二","三","四","五","六","七","八","九","十","两","只","头","又","了","不","大","小","上","下","多","少","白","天","云","山","太","阳","月","亮","星","马","牛","羊","兔","虫","鸟","花","草","树","地","吃","看","走","笑","来","飞","爱","是","跑","跳","高","兴","快","乐","好","的","爸","妈","我"] },
+      { name: "小树林", emoji: "🌿", words: ["水","火","木","金","土","左","右","中","年","口","目","耳","手","足","心","子","女","王","田","百","千","万","黑","红","蓝","绿","黄","高","矮","长","短","圆","方","正","生","死","喜","怒","哀","惧","恨","静","动","开","关","进","出","站","坐","听","说","读","写","学","哥","姐","弟","妹","男","老","姓","名","叔","婶","爷","奶","英","国","美","韩","德","法","俄","印","非","欧","澳","洲","亚"] },
+      { name: "星星谷", emoji: "⭐", words: ["石","沙","风","雨","雪","春","夏","秋","冬","冷","暖","热","凉","河","海","湖","江","田","园","林","路","门","窗","桌","椅","床","灯","衣","帽","鞋","袜","米","面","饭","菜","肉","蛋","奶","果","瓜","叶","根","茎","种","芽","苗","禾","森","林","草","花","树","叶","虫","鸟","鱼","虾","贝","壳"] },
+      { name: "彩虹桥", emoji: "🌈", words: ["声","音","歌","唱","画","写","字","句","诗","书","本","笔","纸","尺","刀","剪","贴","粘","折","撕","拉","推","抱","捧","拿","放","送","给","买","卖","钱","元","角","分","钟","表","时","间","早","晚","今","明","昨","前","后","里","外","旁","边","对","错","真","假","美","丑","新","旧"] },
+      { name: "白云顶", emoji: "☁️", words: ["知","道","想","思","念","记","忘","懂","会","能","可","以","因","为","所","但","如","果","虽","然","比","较","更","最","很","太","非","常","都","全","就","才","还","也","又","再","每","各","别","其","他","什","么","怎","样","这","那","哪","谁","几","多","少","次","回","遍","些","点","块","条","只","头","朵","颗","棵","座","间","辆","艘","吧"] },
+      { name: "太阳城堡", emoji: "☀️", words: ["教","育","培","养","保","护","帮","助","关","心","照","顾","学","习","练","复","预","检","查","测","验","考","试","合","格","优","秀","进","步","努","力","认","识","阅","读","理","解","表","达","沟","通","交","流","分","享","作","团","队","朋","友","伙","伴","同","老","师","校","园","室","操","场","图","书","馆","实","验","手","工","绘","画"] }
+    ];
+
+    const GROUP_SIZE = 5;
+    let currentLevelIndex = 0;
+    let currentGroupIndex = 0;
+    let currentWords = [];
+    let currentQuizWords = [];
+    let gameActive = false;
+    let quizActive = false;
+    let totalStars = 0;
+
+    let progress = {
+      unlockedLevel: 1,
+      completedGroups: {},
+      stars: 0
+    };
+
+    const mapScreen = document.getElementById('mapScreen');
+    const groupScreen = document.getElementById('groupScreen');
+    const gameScreen = document.getElementById('gameScreen');
+    const quizScreen = document.getElementById('quizScreen');
+    const levelGrid = document.getElementById('levelGrid');
+    const groupTitle = document.getElementById('groupTitle');
+    const groupContainer = document.getElementById('groupContainer');
+    const targetChar = document.getElementById('targetChar');
+    const gameMessage = document.getElementById('gameMessage');
+    const optionsContainer = document.getElementById('optionsContainer');
+    const progressFill = document.getElementById('progressFill');
+    const finishGroupBtn = document.getElementById('finishGroupBtn');
+    const starDisplay = document.getElementById('starDisplay');
+    const gameLevelInfo = document.getElementById('gameLevelInfo');
+    const quizTarget = document.getElementById('quizTarget');
+    const quizMessage = document.getElementById('quizMessage');
+    const quizOptions = document.getElementById('quizOptions');
+    const quizCompleteBtn = document.getElementById('quizCompleteBtn');
+
+    let audioCtx = null;
+    function initAudio() {
+      if (audioCtx) return;
+      try {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      } catch(e) {}
+      // 激活语音合成引擎（避免浏览器阻止）
+      if (window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+        // 朗读一个短词来“预热”
+        const warmUp = new SpeechSynthesisUtterance('小羊');
+        warmUp.lang = 'zh-CN';
+        warmUp.volume = 0.1;
+        window.speechSynthesis.speak(warmUp);
+      }
+    }
+    function playBeep(freq, type, duration) {
+      if (!audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = type;
+      osc.frequency.value = freq;
+      gain.gain.value = 0.15;
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+      osc.stop(audioCtx.currentTime + duration);
+    }
+    function soundCorrect() { playBeep(660, 'sine', 0.2); setTimeout(()=>playBeep(880, 'sine', 0.25), 150); }
+    function soundWrong() { playBeep(200, 'triangle', 0.3); }
+
+    // 语音朗读（增强版）
+    function speak(text, force = false) {
+      if (!window.speechSynthesis) return;
+      // 取消当前队列中的语音
+      window.speechSynthesis.cancel();
+      const utter = new SpeechSynthesisUtterance(text);
+      utter.lang = 'zh-CN';
+      utter.rate = 0.75;
+      utter.pitch = 1.1;
+      utter.volume = 1;
+      window.speechSynthesis.speak(utter);
+    }
+
+    function saveProgress() {
+      progress.stars = totalStars;
+      localStorage.setItem('sheep_mountain_progress', JSON.stringify(progress));
+    }
+    function loadProgress() {
+      const saved = localStorage.getItem('sheep_mountain_progress');
+      if (saved) {
+        try {
+          const obj = JSON.parse(saved);
+          progress = obj;
+          totalStars = progress.stars || 0;
+          if (!progress.completedGroups) progress.completedGroups = {};
+          if (typeof progress.unlockedLevel !== 'number') progress.unlockedLevel = 1;
+        } catch(e) { resetProgress(); }
+      } else {
+        resetProgress();
+      }
+      updateStarDisplay();
+    }
+    function resetProgress() {
+      progress = { unlockedLevel: 1, completedGroups: {}, stars: 0 };
+      totalStars = 0;
+      saveProgress();
+    }
+
+    function updateStarDisplay() {
+      starDisplay.textContent = `⭐ ${totalStars} 颗星星`;
+    }
+
+    function addStars(n) {
+      totalStars += n;
+      updateStarDisplay();
+      saveProgress();
+    }
+
+    function isGroupCompleted(levelIdx, groupIdx) {
+      return progress.completedGroups[levelIdx] && progress.completedGroups[levelIdx].includes(groupIdx);
+    }
+    function markGroupCompleted(levelIdx, groupIdx) {
+      if (!progress.completedGroups[levelIdx]) progress.completedGroups[levelIdx] = [];
+      if (!progress.completedGroups[levelIdx].includes(groupIdx)) {
+        progress.completedGroups[levelIdx].push(groupIdx);
+        saveProgress();
+      }
+    }
+
+    function getTotalGroups(levelIdx) {
+      return Math.ceil(LEVELS[levelIdx].words.length / GROUP_SIZE);
+    }
+
+    function isLevelFullyCompleted(levelIdx) {
+      const total = getTotalGroups(levelIdx);
+      for (let i = 0; i < total; i++) {
+        if (!isGroupCompleted(levelIdx, i)) return false;
+      }
+      return true;
+    }
+
+    function spawnStars(count = 8) {
+      for (let i = 0; i < count; i++) {
+        setTimeout(() => {
+          const star = document.createElement('div');
+          star.className = 'star-rain';
+          star.textContent = '⭐';
+          star.style.left = Math.random() * 80 + '%';
+          star.style.top = Math.random() * 40 + '%';
+          document.body.appendChild(star);
+          setTimeout(() => star.remove(), 1300);
+        }, i * 80);
+      }
+    }
+
+    function renderMap() {
+      levelGrid.innerHTML = '';
+      LEVELS.forEach((level, idx) => {
+        const card = document.createElement('div');
+        card.className = 'level-card';
+        const unlocked = idx < progress.unlockedLevel;
+        if (!unlocked) card.classList.add('locked');
+        const completed = isLevelFullyCompleted(idx);
+        card.innerHTML = `
+          <div class="level-emoji">${level.emoji}</div>
+          <div class="level-name">第${idx+1}关·${level.name}</div>
+          <div class="level-stars">${completed ? '🌟 已通关' : (unlocked ? '🔓 可挑战' : '🔒 未解锁')}</div>
+        `;
+        card.addEventListener('click', () => {
+          initAudio();
+          if (!unlocked) {
+            speak('这一关还没解锁哦，继续加油吧！');
+            return;
+          }
+          openLevel(idx);
+        });
+        levelGrid.appendChild(card);
+      });
+    }
+
+    function openLevel(levelIdx) {
+      currentLevelIndex = levelIdx;
+      mapScreen.classList.add('hidden');
+      groupScreen.classList.remove('hidden');
+      renderGroups();
+    }
+
+    function renderGroups() {
+      const level = LEVELS[currentLevelIndex];
+      groupTitle.textContent = `🐑 ${level.name} · 第${currentLevelIndex+1}关`;
+      const totalGroups = getTotalGroups(currentLevelIndex);
+      groupContainer.innerHTML = '';
+      for (let i = 0; i < totalGroups; i++) {
+        const btn = document.createElement('div');
+        btn.className = 'group-btn';
+        btn.textContent = i+1;
+        if (isGroupCompleted(currentLevelIndex, i)) {
+          btn.classList.add('completed');
+        } else if (i > 0 && !isGroupCompleted(currentLevelIndex, i-1)) {
+          btn.classList.add('locked');
+        }
+        btn.addEventListener('click', () => {
+          initAudio();
+          if (btn.classList.contains('locked')) {
+            speak('先完成前面的一组吧');
+            return;
+          }
+          startGroupGame(i);
+        });
+        groupContainer.appendChild(btn);
+      }
+    }
+
+    function getGroupWords(levelIdx, groupIdx) {
+      const all = LEVELS[levelIdx].words;
+      const start = groupIdx * GROUP_SIZE;
+      return all.slice(start, start + GROUP_SIZE);
+    }
+
+    function startGroupGame(groupIdx) {
+      currentGroupIndex = groupIdx;
+      currentWords = [...getGroupWords(currentLevelIndex, groupIdx)];
+      gameActive = true;
+      groupScreen.classList.add('hidden');
+      gameScreen.classList.remove('hidden');
+      finishGroupBtn.classList.add('hidden');
+      gameLevelInfo.textContent = `📖 第${currentLevelIndex+1}关 · 第${groupIdx+1}组`;
+      progressFill.style.width = '0%';
+      nextGameRound();
+    }
+
+    let gameRoundWords = [];
+    let gameRoundIndex = 0;
+
+    function nextGameRound() {
+      if (!gameActive) return;
+      if (gameRoundWords.length === 0 || gameRoundIndex >= gameRoundWords.length) {
+        if (currentWords.length === 0) {
+          finishGroup();
+          return;
+        }
+        gameRoundWords = [...currentWords];
+        shuffleArray(gameRoundWords);
+        gameRoundIndex = 0;
+      }
+      const word = gameRoundWords[gameRoundIndex];
+      showGameWord(word);
+    }
+
+    function showGameWord(word) {
+      targetChar.textContent = word;
+      // 自动朗读
+      speak(word);
+      gameMessage.textContent = '🐑 点一点相同的字吧！';
+      const correct = word;
+      const distractors = getDistractors(correct, 3, currentLevelIndex);
+      const options = [correct, ...distractors];
+      shuffleArray(options);
+      optionsContainer.innerHTML = '';
+      options.forEach(opt => {
+        const card = document.createElement('div');
+        card.className = 'option-card';
+        card.textContent = opt;
+        card.addEventListener('click', (e) => handleGameOption(card, opt, correct));
+        optionsContainer.appendChild(card);
+      });
+      const progressPercent = (gameRoundIndex / gameRoundWords.length) * 100;
+      progressFill.style.width = progressPercent + '%';
+      
+      // 绑定点击汉字重新朗读
+      targetChar.onclick = () => speak(targetChar.textContent);
+    }
+
+    function handleGameOption(card, selected, correct) {
+      if (!gameActive) return;
+      const allCards = document.querySelectorAll('#optionsContainer .option-card');
+      if (selected === correct) {
+        card.classList.add('correct-highlight');
+        gameMessage.textContent = '🎉 太棒了！就是这个字！';
+        soundCorrect();
+        speak(correct + '，对了！');
+        spawnStars(6);
+        const idx = currentWords.indexOf(correct);
+        if (idx > -1) currentWords.splice(idx, 1);
+        gameRoundIndex++;
+        setTimeout(() => {
+          if (currentWords.length === 0) {
+            finishGroup();
+          } else {
+            nextGameRound();
+          }
+        }, 1000);
+      } else {
+        card.classList.add('wrong-flash');
+        soundWrong();
+        gameMessage.textContent = '🤔 再试试看，那个字是？';
+        allCards.forEach(c => {
+          if (c.textContent === correct) {
+            c.classList.add('correct-highlight');
+            setTimeout(() => c.classList.remove('correct-highlight'), 1800);
+          }
+        });
+        speak('这个是' + correct);
+        setTimeout(() => card.classList.remove('wrong-flash'), 500);
+        const correctCard = Array.from(allCards).find(c => c.textContent === correct);
+        if (correctCard) {
+          correctCard.addEventListener('click', function handler() {
+            correctCard.removeEventListener('click', handler);
+            handleGameOption(correctCard, correct, correct);
+          }, { once: true });
+        }
+      }
+    }
+
+    function finishGroup() {
+      gameActive = false;
+      markGroupCompleted(currentLevelIndex, currentGroupIndex);
+      addStars(5);
+      gameMessage.textContent = '✨ 你好厉害！这一组完成啦！';
+      finishGroupBtn.classList.remove('hidden');
+      progressFill.style.width = '100%';
+      spawnStars(10);
+      speak('太厉害了，这组字你都认识啦！');
+      finishGroupBtn.onclick = () => {
+        gameScreen.classList.add('hidden');
+        if (isLevelFullyCompleted(currentLevelIndex)) {
+          startLevelQuiz();
+        } else {
+          groupScreen.classList.remove('hidden');
+          renderGroups();
+        }
+      };
+    }
+
+    function startLevelQuiz() {
+      const allWords = LEVELS[currentLevelIndex].words;
+      currentQuizWords = [...allWords];
+      shuffleArray(currentQuizWords);
+      currentQuizWords = currentQuizWords.slice(0, Math.min(10, currentQuizWords.length));
+      quizActive = true;
+      groupScreen.classList.add('hidden');
+      gameScreen.classList.add('hidden');
+      quizScreen.classList.remove('hidden');
+      quizCompleteBtn.classList.add('hidden');
+      nextQuizRound();
+    }
+
+    let quizIndex = 0;
+    function nextQuizRound() {
+      if (!quizActive) return;
+      if (quizIndex >= currentQuizWords.length) {
+        finishQuiz();
+        return;
+      }
+      const word = currentQuizWords[quizIndex];
+      quizTarget.textContent = word;
+      speak(word);
+      quizMessage.textContent = '🔊 听一听，找一找这个字';
+      const correct = word;
+      const distractors = getDistractors(correct, 3, currentLevelIndex);
+      const options = [correct, ...distractors];
+      shuffleArray(options);
+      quizOptions.innerHTML = '';
+      options.forEach(opt => {
+        const card = document.createElement('div');
+        card.className = 'option-card';
+        card.textContent = opt;
+        card.addEventListener('click', (e) => handleQuizOption(card, opt, correct));
+        quizOptions.appendChild(card);
+      });
+      // 点击汉字重新朗读
+      quizTarget.onclick = () => speak(quizTarget.textContent);
+    }
+
+    function handleQuizOption(card, selected, correct) {
+      if (!quizActive) return;
+      const allCards = document.querySelectorAll('#quizOptions .option-card');
+      if (selected === correct) {
+        card.classList.add('correct-highlight');
+        soundCorrect();
+        quizMessage.textContent = '✅ 答对了！';
+        speak(correct);
+        quizIndex++;
+        setTimeout(nextQuizRound, 900);
+      } else {
+        card.classList.add('wrong-flash');
+        soundWrong();
+        quizMessage.textContent = '💡 这个是 ' + correct + ' ，记住哦';
+        allCards.forEach(c => {
+          if (c.textContent === correct) c.classList.add('correct-highlight');
+        });
+        speak(correct);
+        setTimeout(() => {
+          card.classList.remove('wrong-flash');
+          allCards.forEach(c => c.classList.remove('correct-highlight'));
+          quizIndex++;
+          nextQuizRound();
+        }, 2000);
+      }
+    }
+
+    function finishQuiz() {
+      quizActive = false;
+      quizMessage.textContent = '🏅 测验完成！你真是识字小英雄！';
+      quizCompleteBtn.classList.remove('hidden');
+      spawnStars(14);
+      speak('恭喜你，通过了第' + (currentLevelIndex+1) + '关！');
+      if (currentLevelIndex + 1 < LEVELS.length && progress.unlockedLevel <= currentLevelIndex + 1) {
+        progress.unlockedLevel = currentLevelIndex + 2;
+        saveProgress();
+      }
+      addStars(10);
+      quizCompleteBtn.onclick = () => {
+        quizScreen.classList.add('hidden');
+        mapScreen.classList.remove('hidden');
+        renderMap();
+      };
+    }
+
+    function getDistractors(correct, count, levelIdx) {
+      const pool = [];
+      for (let i = Math.max(0, levelIdx-1); i <= Math.min(LEVELS.length-1, levelIdx+1); i++) {
+        pool.push(...LEVELS[i].words.filter(w => w !== correct));
+      }
+      const unique = [...new Set(pool)];
+      shuffleArray(unique);
+      return unique.slice(0, count);
+    }
+
+    function shuffleArray(arr) {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+    }
+
+    document.getElementById('backToMapBtn').addEventListener('click', () => {
+      groupScreen.classList.add('hidden');
+      mapScreen.classList.remove('hidden');
+      renderMap();
+    });
+
+    // 初始化
+    loadProgress();
+    renderMap();
+    document.body.addEventListener('touchstart', initAudio, { once: true });
+    document.body.addEventListener('click', initAudio, { once: true });
+  })();
+</script>
+</body>
+</html>
