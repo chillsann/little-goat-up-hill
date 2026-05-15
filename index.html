@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0, minimum-scale=1.0, viewport-fit=cover">
-  <title>小羊上山识字大冒险 · 听音选字版</title>
+  <title>小羊上山识字大冒险 · 纯听音版</title>
   <style>
     * {
       margin: 0; padding: 0; box-sizing: border-box;
@@ -55,7 +55,6 @@
     .group-btn.completed::after { content: "⭐"; font-size: 20px; position: absolute; top: -8px; right: -6px; }
     .group-btn.locked { opacity: 0.5; pointer-events: none; background: #ddd8cb; border-color: #bbb; color: #999; }
 
-    /* 新游戏界面 */
     .audio-play-btn {
       width: 90px; height: 90px; background: #ffb84d; border-radius: 50%; display: flex; align-items: center;
       justify-content: center; font-size: 45px; cursor: pointer; box-shadow: 0 8px 0 #d68c2c;
@@ -64,10 +63,6 @@
     .audio-play-btn:active { transform: translateY(4px); box-shadow: 0 4px 0 #d68c2c; background: #ffa32b; }
     .audio-play-btn.playing { background: #ff9f00; }
     .hint-text { font-size: 18px; color: #5e4b2b; margin-bottom: 10px; }
-    .group-word-show {
-      font-size: 32px; font-weight: 700; color: #d84315; background: #fff8e1; border-radius: 20px;
-      padding: 6px 20px; margin: 5px 0; display: inline-block;
-    }
     .options-grid {
       display: grid; grid-template-columns: 1fr 1fr; gap: 15px; width: 100%; margin-top: 15px;
     }
@@ -127,7 +122,6 @@
     <div id="gameLevelInfo" style="font-weight:600;color:#6b4f32;font-size:18px;"></div>
     <div class="hint-text">🔊 先点小羊听听这个字怎么读</div>
     <div class="audio-play-btn" id="playAudioBtn">🔊</div>
-    <div class="group-word-show hidden" id="groupWordShow"></div>
     <div class="message-box" id="gameMessage"></div>
     <div class="options-grid" id="optionsContainer"></div>
     <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
@@ -139,7 +133,6 @@
     <div style="font-size:24px;font-weight:700;color:#b45f06;">🏆 关卡小测验</div>
     <div class="hint-text">🔊 听听看，是哪个字？</div>
     <div class="audio-play-btn" id="quizPlayBtn">🔊</div>
-    <div class="group-word-show hidden" id="quizGroupWordShow"></div>
     <div class="message-box" id="quizMessage"></div>
     <div class="options-grid" id="quizOptionsContainer"></div>
     <button class="btn back hidden" id="quizCompleteBtn" style="margin-top:15px;">🎊 测验完成</button>
@@ -160,7 +153,7 @@
 
     const allChars = new Set(LEVELS.flatMap(l => l.words));
 
-    // 组词库
+    // 组词库（仅用于发音，不显示）
     const rawWordGroups = {
       "一": ["一个","一天","一起"], "二": ["二月","二手"], "三": ["三月","三星"], "四": ["四月","四方"], "五": ["五月","五星"], "六": ["六月","六角"], "七": ["七月","七夕"], "八": ["八月","八方"], "九": ["九月","九天"], "十": ["十月","十分"], "两": ["两个","两天"], "只": ["一只","只要"], "头": ["木头","石头"], "又": ["又大","又来"], "了": ["来了","好了"], "不": ["不是","不好"], "大": ["大人","大山","大小"], "小": ["小鸟","大小","小学"], "上": ["上学","上面"], "下": ["下面","下山"], "多": ["多少","好多"], "少": ["多少","少女"], "白": ["白天","白云"], "天": ["白天","天空"], "云": ["白云","云朵"], "山": ["上山","大山"], "太": ["太阳","太太"], "阳": ["太阳","阳光"], "月": ["月亮","五月"], "亮": ["月亮","闪亮"], "星": ["星星","星光"], "马": ["马上","木马"], "牛": ["水牛","牛奶"], "羊": ["山羊","小羊"], "兔": ["兔子","白兔"], "虫": ["虫子","小虫"], "鸟": ["小鸟","飞鸟"], "花": ["花草","小花"], "草": ["小草","草地"], "树": ["大树","树叶"], "地": ["地上","大地"], "吃": ["吃鱼","吃饭"], "看": ["看见","看书"], "走": ["走开","飞走"], "笑": ["笑话","笑声"], "来": ["上来","下来"], "飞": ["飞走","飞鸟"], "爱": ["爱人","可爱"], "是": ["可是","就是"], "跑": ["跑马","飞跑"], "跳": ["跳高","跳远"], "高": ["高大","高兴"], "兴": ["高兴","兴奋"], "快": ["飞快","快乐"], "乐": ["快乐","音乐"], "好": ["好人","你好"], "的": ["我的","你的"], "爸": ["爸爸"], "妈": ["妈妈"], "我": ["我们","我的"],
       "水": ["水果","河水"], "火": ["火车","大火"], "木": ["木头","木马"], "金": ["金子","金色"], "土": ["土地","泥土"], "左": ["左右","左手"], "右": ["右手","右边"], "中": ["中心","中间"], "年": ["今年","新年"], "口": ["门口","口水"], "目": ["目光","节目"], "耳": ["耳朵","木耳"], "手": ["小手","手上"], "足": ["足球","十足"], "心": ["爱心","开心"], "子": ["子女","孩子"], "女": ["女儿","女生"], "王": ["国王","王子"], "田": ["水田","田地"], "百": ["一百","百万"], "千": ["一千","秋千"], "万": ["一万","千万"], "黑": ["黑色","天黑"], "红": ["红色","红日"], "蓝": ["蓝天","蓝色"], "绿": ["绿色","绿叶"], "黄": ["黄色","黄金"], "矮": ["矮小","高矮"], "长": ["长大","很长"], "短": ["短跑","长短"], "圆": ["圆月","方圆"], "方": ["方向","地方"], "正": ["正在","真正"], "生": ["生日","花生"], "死": ["生死","死心"], "喜": ["喜欢","喜事"], "怒": ["发怒","怒火"], "哀": ["悲哀","哀乐"], "惧": ["惧怕","不惧"], "恨": ["可恨","仇恨"], "静": ["安静","平静"], "动": ["动物","开动"], "开": ["开心","开门"], "关": ["关门","关心"], "进": ["进入","进来"], "出": ["出去","出来"], "站": ["车站","站立"], "坐": ["请坐","坐下"], "听": ["听说","听见"], "说": ["说话","小说"], "读": ["读书","阅读"], "写": ["写字","书写"], "学": ["学习","学校"], "哥": ["哥哥","大哥"], "姐": ["姐姐","大姐"], "弟": ["弟弟","兄弟"], "妹": ["妹妹","姐妹"], "男": ["男人","男生"], "老": ["老师","老人"], "姓": ["姓名","姓氏"], "名": ["名字","出名"], "叔": ["叔叔","大叔"], "婶": ["大婶","婶婶"], "爷": ["爷爷","老爷"], "奶": ["奶奶","牛奶"], "英": ["英国","英雄"], "国": ["中国","国家"], "美": ["美国","美丽"], "韩": ["韩国"], "德": ["德国","品德"], "法": ["法国","方法"], "俄": ["俄国"], "印": ["印度","打印"], "非": ["非常","非洲"], "欧": ["欧洲","欧美"], "澳": ["澳洲","澳门"], "洲": ["亚洲","非洲"], "亚": ["亚洲"],
@@ -182,7 +175,6 @@
     let gameActive = false, quizActive = false, totalStars = 0;
     let progress = { unlockedLevel: 1, completedGroups: {}, stars: 0 };
 
-    // DOM
     const startScreen = document.getElementById('startScreen');
     const mapScreen = document.getElementById('mapScreen');
     const groupScreen = document.getElementById('groupScreen');
@@ -192,7 +184,6 @@
     const groupTitle = document.getElementById('groupTitle');
     const groupContainer = document.getElementById('groupContainer');
     const playAudioBtn = document.getElementById('playAudioBtn');
-    const groupWordShow = document.getElementById('groupWordShow');
     const gameMessage = document.getElementById('gameMessage');
     const optionsContainer = document.getElementById('optionsContainer');
     const progressFill = document.getElementById('progressFill');
@@ -201,12 +192,10 @@
     const gameLevelInfo = document.getElementById('gameLevelInfo');
     const retryHint = document.getElementById('retryHint');
     const quizPlayBtn = document.getElementById('quizPlayBtn');
-    const quizGroupWordShow = document.getElementById('quizGroupWordShow');
     const quizMessage = document.getElementById('quizMessage');
     const quizOptionsContainer = document.getElementById('quizOptionsContainer');
     const quizCompleteBtn = document.getElementById('quizCompleteBtn');
 
-    // 音频
     let audioCtx = null;
     function createAudioContext() {
       if (audioCtx) return;
@@ -246,13 +235,12 @@
       });
     }
 
-    async function playWordWithGroup(char, showElement) {
+    async function playWordWithGroup(char) {
       playBeep(800, 'sine', 0.12);
       await playCharAudio(char);
       const groups = wordGroups[char];
       if (groups && groups.length > 0) {
         const group = groups[Math.floor(Math.random() * groups.length)];
-        if (showElement) showElement.textContent = group;
         await new Promise(r => setTimeout(r, 300));
         for (const c of group) {
           await playCharAudio(c);
@@ -261,7 +249,6 @@
       }
     }
 
-    // 进度
     function saveProgress() {
       progress.stars = totalStars;
       localStorage.setItem('sheep_mountain_progress', JSON.stringify(progress));
@@ -306,7 +293,6 @@
       }
     }
 
-    // 地图
     document.getElementById('startBtn').addEventListener('click', () => {
       startScreen.classList.add('hidden');
       mapScreen.classList.remove('hidden');
@@ -350,7 +336,6 @@
       }
     }
 
-    // 游戏核心：听音选字
     let currentRoundWord = null;
     let wrongAttempts = 0;
 
@@ -374,11 +359,10 @@
         finishGroup();
         return;
       }
-      const word = currentWords[0]; // 按顺序取第一个字
+      const word = currentWords[0];
       currentRoundWord = word;
       wrongAttempts = 0;
       retryHint.textContent = '';
-      groupWordShow.classList.add('hidden');
       gameMessage.textContent = '🔊 先听听小羊怎么说！';
       optionsContainer.innerHTML = '';
       playAudioBtn.classList.remove('playing');
@@ -399,12 +383,10 @@
       const completed = totalWords - currentWords.length;
       progressFill.style.width = ((completed / totalWords) * 100) + '%';
 
-      // 播放按钮事件
       playAudioBtn.onclick = () => {
         if (playAudioBtn.classList.contains('playing')) return;
         playAudioBtn.classList.add('playing');
-        playWordWithGroup(word, groupWordShow).then(() => {
-          groupWordShow.classList.remove('hidden');
+        playWordWithGroup(word).then(() => {
           playAudioBtn.classList.remove('playing');
         });
       };
@@ -418,14 +400,7 @@
         soundCorrect();
         gameMessage.textContent = '🎉 太棒了！你找对啦！';
         spawnStars(5);
-        // 显示组词
-        const groups = wordGroups[correct];
-        if (groups) {
-          groupWordShow.textContent = groups[Math.floor(Math.random() * groups.length)];
-          groupWordShow.classList.remove('hidden');
-        }
         addStars(1);
-        // 移除这个字，进入下一个
         currentWords.shift();
         setTimeout(() => {
           if (currentWords.length > 0) nextWord();
@@ -439,20 +414,17 @@
           gameMessage.textContent = `🤔 不对哦，再听一次试试？（还可以错${2-wrongAttempts}次）`;
           retryHint.textContent = `再听听看，是哪个字呢？`;
         } else {
-          // 超过两次错误，直接显示正确答案并跳过
           gameMessage.textContent = '💡 这个字是“' + correct + '”，记住它哟！';
           retryHint.textContent = '';
           allCards.forEach(c => {
             if (c.textContent === correct) c.classList.add('correct-highlight');
           });
-          // 移除这个字，继续
           currentWords.shift();
           setTimeout(() => {
             if (currentWords.length > 0) nextWord();
             else finishGroup();
           }, 1500);
         }
-        // 移除错误卡片的闪烁效果
         setTimeout(() => {
           card.classList.remove('wrong-flash');
           allCards.forEach(c => c.classList.remove('correct-highlight'));
@@ -463,7 +435,7 @@
     function finishGroup() {
       gameActive = false;
       markGroupCompleted(currentLevelIndex, currentGroupIndex);
-      addStars(3); // 完成奖励
+      addStars(3);
       gameMessage.textContent = '✨ 你好厉害！这一组完成啦！';
       finishGroupBtn.classList.remove('hidden');
       progressFill.style.width = '100%';
@@ -475,7 +447,6 @@
       };
     }
 
-    // 测验（同样采用听音选字）
     function startLevelQuiz() {
       const allWords = LEVELS[currentLevelIndex].words;
       currentQuizWords = [...allWords];
@@ -498,7 +469,6 @@
       const word = currentQuizWords[0];
       currentQuizWord = word;
       quizWrongAttempts = 0;
-      quizGroupWordShow.classList.add('hidden');
       quizMessage.textContent = '🔊 听听看，是哪个字？';
       quizOptionsContainer.innerHTML = '';
       quizPlayBtn.classList.remove('playing');
@@ -518,8 +488,7 @@
       quizPlayBtn.onclick = () => {
         if (quizPlayBtn.classList.contains('playing')) return;
         quizPlayBtn.classList.add('playing');
-        playWordWithGroup(word, quizGroupWordShow).then(() => {
-          quizGroupWordShow.classList.remove('hidden');
+        playWordWithGroup(word).then(() => {
           quizPlayBtn.classList.remove('playing');
         });
       };
