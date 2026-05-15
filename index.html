@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0, minimum-scale=1.0, viewport-fit=cover">
-  <title>小羊上山识字大冒险 · 纯听音版</title>
+  <title>小羊上山识字大冒险 · 流畅词组版</title>
   <style>
     * {
       margin: 0; padding: 0; box-sizing: border-box;
@@ -93,6 +93,7 @@
       0% { opacity: 1; transform: translateY(0) rotate(0deg); } 100% { opacity: 0; transform: translateY(160px) rotate(200deg); }
     }
     .retry-hint { font-size: 16px; color: #e53935; }
+    .mode-hint { font-size: 14px; color: #8b7a4c; background: #fffae9; border-radius: 20px; padding: 4px 16px; margin-bottom: 5px; }
   </style>
 </head>
 <body>
@@ -104,12 +105,13 @@
     <div style="font-size:60px;">🐑🌄</div>
     <div style="font-size:22px;font-weight:600;color:#5e4b2b;">小羊上山识字大冒险</div>
     <button class="big-btn" id="startBtn">开 始 冒 险</button>
-    <div style="font-size:15px;color:#8b7a4c;">听一听，找一找，识字更有趣！</div>
+    <div style="font-size:15px;color:#8b7a4c;" id="modeHint">正在检测朗读引擎...</div>
   </div>
 
   <div id="mapScreen" class="screen hidden">
     <div style="font-size:18px;font-weight:600;color:#5e4b2b;margin-bottom:5px;">🌄 选择关卡</div>
     <div class="level-grid" id="levelGrid"></div>
+    <div class="mode-hint hidden" id="globalModeHint"></div>
   </div>
 
   <div id="groupScreen" class="screen hidden">
@@ -153,7 +155,7 @@
 
     const allChars = new Set(LEVELS.flatMap(l => l.words));
 
-    // 组词库（仅用于发音，不显示）
+    // 组词库（用于发音）
     const rawWordGroups = {
       "一": ["一个","一天","一起"], "二": ["二月","二手"], "三": ["三月","三星"], "四": ["四月","四方"], "五": ["五月","五星"], "六": ["六月","六角"], "七": ["七月","七夕"], "八": ["八月","八方"], "九": ["九月","九天"], "十": ["十月","十分"], "两": ["两个","两天"], "只": ["一只","只要"], "头": ["木头","石头"], "又": ["又大","又来"], "了": ["来了","好了"], "不": ["不是","不好"], "大": ["大人","大山","大小"], "小": ["小鸟","大小","小学"], "上": ["上学","上面"], "下": ["下面","下山"], "多": ["多少","好多"], "少": ["多少","少女"], "白": ["白天","白云"], "天": ["白天","天空"], "云": ["白云","云朵"], "山": ["上山","大山"], "太": ["太阳","太太"], "阳": ["太阳","阳光"], "月": ["月亮","五月"], "亮": ["月亮","闪亮"], "星": ["星星","星光"], "马": ["马上","木马"], "牛": ["水牛","牛奶"], "羊": ["山羊","小羊"], "兔": ["兔子","白兔"], "虫": ["虫子","小虫"], "鸟": ["小鸟","飞鸟"], "花": ["花草","小花"], "草": ["小草","草地"], "树": ["大树","树叶"], "地": ["地上","大地"], "吃": ["吃鱼","吃饭"], "看": ["看见","看书"], "走": ["走开","飞走"], "笑": ["笑话","笑声"], "来": ["上来","下来"], "飞": ["飞走","飞鸟"], "爱": ["爱人","可爱"], "是": ["可是","就是"], "跑": ["跑马","飞跑"], "跳": ["跳高","跳远"], "高": ["高大","高兴"], "兴": ["高兴","兴奋"], "快": ["飞快","快乐"], "乐": ["快乐","音乐"], "好": ["好人","你好"], "的": ["我的","你的"], "爸": ["爸爸"], "妈": ["妈妈"], "我": ["我们","我的"],
       "水": ["水果","河水"], "火": ["火车","大火"], "木": ["木头","木马"], "金": ["金子","金色"], "土": ["土地","泥土"], "左": ["左右","左手"], "右": ["右手","右边"], "中": ["中心","中间"], "年": ["今年","新年"], "口": ["门口","口水"], "目": ["目光","节目"], "耳": ["耳朵","木耳"], "手": ["小手","手上"], "足": ["足球","十足"], "心": ["爱心","开心"], "子": ["子女","孩子"], "女": ["女儿","女生"], "王": ["国王","王子"], "田": ["水田","田地"], "百": ["一百","百万"], "千": ["一千","秋千"], "万": ["一万","千万"], "黑": ["黑色","天黑"], "红": ["红色","红日"], "蓝": ["蓝天","蓝色"], "绿": ["绿色","绿叶"], "黄": ["黄色","黄金"], "矮": ["矮小","高矮"], "长": ["长大","很长"], "短": ["短跑","长短"], "圆": ["圆月","方圆"], "方": ["方向","地方"], "正": ["正在","真正"], "生": ["生日","花生"], "死": ["生死","死心"], "喜": ["喜欢","喜事"], "怒": ["发怒","怒火"], "哀": ["悲哀","哀乐"], "惧": ["惧怕","不惧"], "恨": ["可恨","仇恨"], "静": ["安静","平静"], "动": ["动物","开动"], "开": ["开心","开门"], "关": ["关门","关心"], "进": ["进入","进来"], "出": ["出去","出来"], "站": ["车站","站立"], "坐": ["请坐","坐下"], "听": ["听说","听见"], "说": ["说话","小说"], "读": ["读书","阅读"], "写": ["写字","书写"], "学": ["学习","学校"], "哥": ["哥哥","大哥"], "姐": ["姐姐","大姐"], "弟": ["弟弟","兄弟"], "妹": ["妹妹","姐妹"], "男": ["男人","男生"], "老": ["老师","老人"], "姓": ["姓名","姓氏"], "名": ["名字","出名"], "叔": ["叔叔","大叔"], "婶": ["大婶","婶婶"], "爷": ["爷爷","老爷"], "奶": ["奶奶","牛奶"], "英": ["英国","英雄"], "国": ["中国","国家"], "美": ["美国","美丽"], "韩": ["韩国"], "德": ["德国","品德"], "法": ["法国","方法"], "俄": ["俄国"], "印": ["印度","打印"], "非": ["非常","非洲"], "欧": ["欧洲","欧美"], "澳": ["澳洲","澳门"], "洲": ["亚洲","非洲"], "亚": ["亚洲"],
@@ -174,6 +176,7 @@
     let currentWords = [], currentQuizWords = [];
     let gameActive = false, quizActive = false, totalStars = 0;
     let progress = { unlockedLevel: 1, completedGroups: {}, stars: 0 };
+    let speechSupported = false; // 系统语音合成是否可用
 
     const startScreen = document.getElementById('startScreen');
     const mapScreen = document.getElementById('mapScreen');
@@ -195,7 +198,10 @@
     const quizMessage = document.getElementById('quizMessage');
     const quizOptionsContainer = document.getElementById('quizOptionsContainer');
     const quizCompleteBtn = document.getElementById('quizCompleteBtn');
+    const modeHintElem = document.getElementById('modeHint');
+    const globalModeHint = document.getElementById('globalModeHint');
 
+    // 音频上下文
     let audioCtx = null;
     function createAudioContext() {
       if (audioCtx) return;
@@ -235,20 +241,84 @@
       });
     }
 
-    async function playWordWithGroup(char) {
-      playBeep(800, 'sine', 0.12);
-      await playCharAudio(char);
-      const groups = wordGroups[char];
-      if (groups && groups.length > 0) {
-        const group = groups[Math.floor(Math.random() * groups.length)];
-        await new Promise(r => setTimeout(r, 300));
-        for (const c of group) {
+    // 检测语音合成是否可用
+    async function detectSpeech() {
+      if (!window.speechSynthesis) return false;
+      // 尝试获取语音列表
+      const voices = speechSynthesis.getVoices();
+      if (voices.length > 0) return voices.some(v => v.lang.includes('zh'));
+      return new Promise(resolve => {
+        speechSynthesis.onvoiceschanged = () => {
+          const v = speechSynthesis.getVoices();
+          resolve(v.some(vo => vo.lang.includes('zh')));
+        };
+        setTimeout(() => resolve(false), 1500);
+      });
+    }
+
+    // 用系统语音朗读词组
+    function speakGroups(groups) {
+      if (!speechSupported || !window.speechSynthesis) return;
+      const text = groups.join('， '); // 用逗号分隔，自然停顿
+      window.speechSynthesis.cancel();
+      const utter = new SpeechSynthesisUtterance(text);
+      utter.lang = 'zh-CN';
+      utter.rate = 0.85;
+      utter.pitch = 1;
+      utter.volume = 1;
+      window.speechSynthesis.speak(utter);
+    }
+
+    // 快速连读 MP3 词组（回退方案）
+    async function fallbackSpeakGroups(groups) {
+      for (let i = 0; i < groups.length; i++) {
+        const word = groups[i];
+        for (const c of word) {
           await playCharAudio(c);
-          await new Promise(r => setTimeout(r, 150));
+          await new Promise(r => setTimeout(r, 50)); // 缩短间隔
+        }
+        if (i < groups.length - 1) {
+          await new Promise(r => setTimeout(r, 300)); // 词组间停顿
         }
       }
     }
 
+    // 核心：播放单字 + 词组
+    async function playWordWithGroup(char) {
+      playBeep(800, 'sine', 0.12);
+      await playCharAudio(char); // 单字仍然用 MP3
+
+      const groups = wordGroups[char];
+      if (groups && groups.length > 0) {
+        // 随机选 2~3 个词组
+        const shuffled = [...groups].sort(() => Math.random() - 0.5);
+        const selected = shuffled.slice(0, Math.min(3, shuffled.length));
+
+        if (speechSupported) {
+          // 语音合成模式：自然朗读词组
+          speakGroups(selected);
+        } else {
+          // 回退模式：快速连读 MP3
+          await fallbackSpeakGroups(selected);
+        }
+      }
+    }
+
+    // 初始化语音检测
+    async function initSpeech() {
+      speechSupported = await detectSpeech();
+      if (speechSupported) {
+        modeHintElem.textContent = '✅ 自然朗读模式已开启';
+        globalModeHint.textContent = '';
+        globalModeHint.classList.add('hidden');
+      } else {
+        modeHintElem.textContent = '🔇 快速连读模式（词组由单字合成）';
+        globalModeHint.textContent = '💡 词组朗读已优化，仍建议家长陪读';
+        globalModeHint.classList.remove('hidden');
+      }
+    }
+
+    // 进度
     function saveProgress() {
       progress.stars = totalStars;
       localStorage.setItem('sheep_mountain_progress', JSON.stringify(progress));
@@ -293,7 +363,11 @@
       }
     }
 
-    document.getElementById('startBtn').addEventListener('click', () => {
+    // 启动按钮（增加语音检测）
+    document.getElementById('startBtn').addEventListener('click', async () => {
+      document.getElementById('startBtn').disabled = true;
+      modeHintElem.textContent = '正在检测朗读引擎...';
+      await initSpeech();
       startScreen.classList.add('hidden');
       mapScreen.classList.remove('hidden');
       renderMap();
