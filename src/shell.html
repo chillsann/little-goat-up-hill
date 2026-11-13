@@ -113,22 +113,31 @@
             <button class="btn" id="startBtn">🚩 开始冒险</button>
             <button class="btn blue" id="dexHomeBtn">💎 我的宝石</button>
           </div>
-          <div class="home-tip" id="homeTip">依据《小羊上山》第 1 级 60 字编排 · 建议家长陪玩</div>
+          <div class="home-tip" id="homeTip">全套 1~6 级 · 60 册绘本 · 390 个核心字 · 每本都能跟读全文</div>
         </div>
         <button class="btn ghost small" id="parentBtn" style="margin-top:12px">👨‍👩‍👦 给家长的话</button>
       </div>
     </div>
 
+    <!-- 选级 -->
+    <div class="screen" id="scr-levels">
+      <h2 class="big">🎒 选一个级别出发</h2>
+      <p class="sub" id="levelSub">全套 6 级 · 60 册绘本 · 390 个核心字</p>
+      <div class="level-grid" id="levelGrid"></div>
+      <button class="btn ghost small" id="levelBack" style="margin-top:10px">↩ 回到首页</button>
+    </div>
+
     <!-- 登山地图 -->
     <div class="screen" id="scr-map">
-      <h2 class="big">🗺️ 汉字山登山地图</h2>
-      <p class="sub">点亮 60 颗汉字宝石，登上山顶宝库！点一个站点出发～</p>
+      <h2 class="big" id="mapTitle">🗺️ 汉字山登山地图</h2>
+      <p class="sub" id="mapSub">点一个站点出发～</p>
       <div class="map-wrap" id="mapWrap">
         <svg class="map-path" viewBox="0 0 800 460" preserveAspectRatio="none">
           <path d="M70 400 Q150 330 230 370 T400 300 Q480 250 560 290 Q640 330 720 210 Q760 150 720 70"
                 fill="none" stroke="#e6b34c" stroke-width="12" stroke-linecap="round" stroke-dasharray="2 26" opacity=".85"/>
         </svg>
       </div>
+      <button class="btn ghost small" id="mapBack">↩ 换个级别</button>
     </div>
 
     <!-- 剧情 -->
@@ -207,7 +216,32 @@
         <div class="book-lines" id="bookLines"></div>
         <div class="book-foot" id="bookFoot">✨ 这些字你都认识啦，自己读一遍吧！</div>
       </div>
-      <button class="btn green" id="readDone" style="margin-top:12px">🏅 我读完啦！</button>
+      <div class="row" style="margin-top:12px">
+        <button class="btn ghost small" id="readDone">先不跟读，直接领奖</button>
+        <button class="btn green" id="readEcho">🎤 跟读全文 →</button>
+      </div>
+    </div>
+
+    <!-- 跟读全文 -->
+    <div class="screen" id="scr-echo">
+      <h2 class="big" id="echoTitle">🎤 跟读全文</h2>
+      <div class="echo-head">
+        <div class="echo-book" id="echoBook"></div>
+        <div class="echo-prog" id="echoProg"></div>
+        <button class="btn ghost small" id="echoAll">🔊 听整本</button>
+      </div>
+      <div class="echo-tip" id="echoTip"></div>
+      <div class="echo-list" id="echoList"></div>
+      <div class="echo-stage">
+        <svg class="echo-sheep"><use href="#ic-sheep"/></svg>
+        <div class="echo-stars" id="echoStars"></div>
+        <div class="echo-cheer" id="echoCheer">大声读出来，小羊在听哦！</div>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <button class="btn ghost small" id="echoBack">↩ 再看绘本</button>
+        <button class="btn ghost small" id="echoSkip">先不跟读</button>
+        <button class="btn green" id="echoDone">🏅 全部读完，领奖状！</button>
+      </div>
     </div>
 
     <!-- 结算 -->
@@ -215,6 +249,7 @@
       <div class="award-wrap">
         <svg class="medal"><use href="#ic-medal"/></svg>
         <div class="award-title" id="awardTitle">太厉害啦！</div>
+        <div class="award-badge" id="awardBadge"></div>
         <div class="award-row" id="awardGems"></div>
         <canvas id="certCanvas" width="1000" height="660"></canvas>
         <div class="row" style="margin-top:6px">

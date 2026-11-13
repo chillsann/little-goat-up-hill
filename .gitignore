@@ -1,6 +1,13 @@
 shots/
 .ct*/
+.ct2*/
 .prev*/
+.live/
+.cdp-profile/
+.cdp-shot.mjs
+.emoji-check.html
+.tmp-*.html
+preview2/crop-*
 index-v1.html.bak
 emoji-test*.html
 emoji-list.json

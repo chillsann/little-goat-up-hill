@@ -4,8 +4,10 @@
 const QCOUNT = {gem: 5, whack: 5, missing: 4, match: 1, build: 5};
 const PRAISE = ['太棒了！', '好厉害！', '答对啦！', '超级棒！', '你真神！', '完全正确！'];
 
+/* 高年级累计字表很大，出题优先用最近学过的字，避免一上来考 300 字前的冷门字 */
+const GP = () => (F.recent && F.recent.length >= 6) ? F.recent : F.pool;
 function distractors(correct, n, exclude = []) {
-  const pool = F.pool.filter(c => c !== correct && !exclude.includes(c));
+  const pool = GP().filter(c => c !== correct && !exclude.includes(c));
   return shuffle(pool).slice(0, n);
 }
 function updateCombo() {
@@ -29,14 +31,14 @@ function onRight(el) {
   F.q++;
   setTimeout(() => {
     if (F.q >= QCOUNT[type]) gameDone(); else renderGame();
-  }, 800);
+  }, FX(800));
 }
 function onWrong(el, msg) {
   if (el) { el.classList.add('wrong'); setTimeout(() => el.classList.remove('wrong'), 420); }
   SFX.wrong(); F.combo = 0; updateCombo();
   $('gameMsg').className = 'msg bad';
   $('gameMsg').textContent = msg || '再听一次，你可以的！💪';
-  setTimeout(() => { $('gameMsg').className = 'msg'; }, 1400);
+  setTimeout(() => { $('gameMsg').className = 'msg'; }, FX(1400));
 }
 function gameDone() {
   F.gi++; F.q = 0;
@@ -62,7 +64,7 @@ function listenBlock(correct, label) {
 function bindListen(correct) {
   const b = $('bigListen');
   if (b) b.onclick = () => { unlockAudio(); SFX.tap(); b.classList.add('playing'); speakChar(correct).then(() => b.classList.remove('playing')); };
-  setTimeout(() => { if (F.stage === 'game') speakChar(correct); }, 320);
+  setTimeout(() => { if (F.stage === 'game') speakChar(correct); }, FX(320));
 }
 
 /* ---------- ① 抢汉字宝石：听音选字 ---------- */
@@ -103,7 +105,7 @@ function renderWhack() {
 
 /* ---------- ③ 谁不见了：字卡记忆（教材配套字卡游戏） ---------- */
 function renderMissing() {
-  const cards = shuffle(F.pool).slice(0, 4);
+  const cards = shuffle(GP()).slice(0, 4);
   const hidden = pick(cards);
   const options = shuffle([hidden, ...distractors(hidden, 3, cards)]);
   F.plan = {type: 'one', selectors: [`[data-val="${hidden}"]`]};
@@ -132,15 +134,15 @@ function renderMissing() {
   setTimeout(() => {
     if (F.stage !== 'game') return;
     row.querySelectorAll('.mem-card').forEach(el => el.classList.add('covered'));
-    setTimeout(reveal, 500);
-  }, 2300);
+    setTimeout(reveal, FX(500));
+  }, FX(2300));
   // 展示阶段逐字读一遍
-  cards.forEach((c, i) => setTimeout(() => { if (F.stage === 'game') speakChar(c); }, 260 + i * 430));
+  cards.forEach((c, i) => setTimeout(() => { if (F.stage === 'game') speakChar(c); }, FX(260 + i * 430)));
 }
 
 /* ---------- ④ 汉字对对碰：字 ↔ 图画翻牌 ---------- */
 function renderMatch() {
-  const chars = shuffle(F.pool).slice(0, Math.min(6, F.pool.length));
+  const chars = shuffle(GP()).slice(0, Math.min(6, GP().length));
   const cards = shuffle(chars.flatMap(c => [
     {k: c, t: 'char', v: c}, {k: c, t: 'pic', v: CHARS[c].e}
   ]));
@@ -165,7 +167,7 @@ function renderMatch() {
         SFX.gem(); speakChar(x.k);
         if (matched === chars.length) {
           $('gameMsg').textContent = '🎉 全部配对成功！';
-          setTimeout(() => onRight(null), 700);
+          setTimeout(() => onRight(null), FX(700));
         }
       } else {
         lock = true; SFX.wrong();
@@ -174,7 +176,7 @@ function renderMatch() {
           a.classList.remove('flip'); a.innerHTML = '<span style="opacity:.5">?</span>';
           b.classList.remove('flip'); b.innerHTML = '<span style="opacity:.5">?</span>';
           lock = false;
-        }, 720);
+        }, FX(720));
       }
     };
   });
@@ -182,7 +184,7 @@ function renderMatch() {
 
 /* ---------- ⑤ 词语拼拼乐：把两个字拼成一个词 ---------- */
 function renderBuild() {
-  const valid = WORDS.filter(w => w.length === 2 && [...w].every(c => F.pool.includes(c)));
+  const valid = WORDS.filter(w => w.length === 2 && w[0] !== w[1] && [...w].every(c => F.pool.includes(c)));
   const word = pick(valid.length ? valid : ['上山']);
   const tiles = shuffle([...word, ...distractors(word[0], 4, [...word])]);
   F.plan = {type: 'build', selectors: [...word].map(c => `[data-val="${c}"]`)};
@@ -213,19 +215,23 @@ function renderBuild() {
             filled = [];
             $('pool').querySelectorAll('.pool-tile').forEach(x => x.classList.remove('used'));
             [...$('slots').children].forEach(s => { s.textContent = ''; s.classList.remove('filled'); });
-          }, 700);
+          }, FX(700));
         }
       }
     };
   });
   $('bigListen').onclick = () => { unlockAudio(); SFX.tap(); speakWord(word); };
-  setTimeout(() => { if (F.stage === 'game') speakWord(word); }, 420);
+  setTimeout(() => { if (F.stage === 'game') speakWord(word); }, FX(420));
 }
 
 /* ---------------- 自动化测试接口（不影响正常游玩） ---------------- */
 window.__test = {
-  state: () => ({book: F.book, stage: F.stage, gi: F.gi, q: F.q,
+  state: () => ({level: S.level, book: F.book, stage: F.stage, gi: F.gi, q: F.q,
     type: F.games[F.gi] || null, combo: F.combo, gems: S.gems.length,
-    stars: S.stars, done: S.done.slice(), unlocked: S.unlocked}),
+    stars: S.stars, done: prog().done.slice(), unlocked: prog().unlocked,
+    echo: F.echo ? F.echo.checked.slice() : []}),
   plan: () => F.plan || null,
+  setLevel: l => { setLevel(l); },
+  levels: () => LEVELS.map(l => ({level: l.level, chars: l.chars.length, total: l.total})),
+  voice: () => voiceInfo(),
 };

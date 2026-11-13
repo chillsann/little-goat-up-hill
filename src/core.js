@@ -1,5 +1,5 @@
 /* =====================================================================
-   小羊上山 · 汉字山能量大冒险  —— 核心
+   小羊上山 · 汉字山能量大冒险 —— 核心（1~6 级 / 跟读全文）
    ===================================================================== */
 const $ = id => document.getElementById(id);
 const delay = ms => new Promise(r => setTimeout(r, ms));
@@ -7,22 +7,44 @@ const rnd = n => Math.floor(Math.random() * n);
 const pick = a => a[rnd(a.length)];
 const shuffle = a => { const b = a.slice(); for (let i = b.length - 1; i > 0; i--) { const j = rnd(i + 1); [b[i], b[j]] = [b[j], b[i]]; } return b; };
 const uniq = a => [...new Set(a)];
+const QS = new URLSearchParams(location.search);
+/* 自动测试时跳过真实发声，避免 60 册 × 逐字播放把测试拖死 */
+const FAST = QS.has('autotest') || QS.has('smoke') || QS.has('echotest');
+/* 自动测试时把过场动画等待压到 0，避免 60 册 × 逐题动画把虚拟时间耗尽 */
+const FX = ms => (FAST ? 0 : ms);
 
-/* ---------------- 存档 ---------------- */
-const KEY = 'goat_hill_v2';
-const DEFAULT = {unlocked: 0, done: [], gems: [], stars: 0, mute: false, best: 0};
+/* ---------------- 存档（按级别独立，兼容 v2） ---------------- */
+const KEY = 'goat_hill_v3';
+const DEFAULT = {level: 1, prog: {}, gems: [], stars: 0, mute: false, best: 0};
 let S;
+function normalize(o) {
+  const s = {...DEFAULT, ...o};
+  s.prog = {};
+  for (let l = 1; l <= 6; l++) s.prog[l] = {unlocked: 0, done: [], echo: [], ...((o.prog || {})[l] || {})};
+  s.gems = Array.isArray(s.gems) ? s.gems : [];
+  s.level = Math.min(6, Math.max(1, +s.level || 1));
+  return s;
+}
 function loadSave() {
   try {
     const o = JSON.parse(localStorage.getItem(KEY) || 'null');
-    if (o && typeof o === 'object') return {...DEFAULT, ...o, done: o.done || [], gems: o.gems || []};
+    if (o && typeof o === 'object') return normalize(o);
   } catch (e) {}
-  return {...DEFAULT, done: [], gems: []};
+  try {  // 旧版只有第 1 级，迁移过来
+    const old = JSON.parse(localStorage.getItem('goat_hill_v2') || 'null');
+    if (old) return normalize({level: 1, gems: old.gems || [], stars: old.stars || 0,
+      mute: old.mute || false, best: old.best || 0,
+      prog: {1: {unlocked: old.unlocked || 0, done: old.done || [], echo: []}}});
+  } catch (e) {}
+  return normalize(DEFAULT);
 }
 function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
 S = loadSave();
+function prog(l = S.level) { return S.prog[l] || (S.prog[l] = {unlocked: 0, done: [], echo: []}); }
+let BOOKS = LEVELS[S.level - 1].books;
+function setLevel(l) { S.level = l; BOOKS = LEVELS[l - 1].books; save(); }
 
-/* ---------------- 音频（必须用户手势内解锁，否则整局静音） ---------------- */
+/* ---------------- 音效 / 发音 ---------------- */
 let AC = null;
 function ensureAudio() {
   try {
@@ -64,12 +86,15 @@ const SFX = {
   combo:  () => { [784, 988, 1318].forEach((f, i) => tone(f, .1, 'square', .07, i * .06)); },
   win:    () => { [523, 659, 784, 1047, 1318].forEach((f, i) => tone(f, .26, 'sine', .15, i * .12)); },
   whoosh: () => tone(300, .18, 'sawtooth', .05),
+  rec:    () => { tone(880, .1, 'sine', .12); tone(660, .16, 'sine', .1, .1); },
 };
-/* 真人单字发音（仓库 audio/ 下 60 个 MP3，离线也能听） */
+
+/* 真人单字 MP3（构建时注入清单）；没有录音的字用浏览器中文语音 */
+const MP3_CHARS = new Set(/*__MP3_CHARS__*/ '');
 const audioCache = {};
-function speakChar(c) {
+function playMp3(c) {
   return new Promise(resolve => {
-    if (S.mute) return resolve();
+    if (S.mute || FAST) return resolve();
     try {
       const a = audioCache[c] || (audioCache[c] = new Audio('audio/' + encodeURIComponent(c) + '.mp3'));
       a.pause(); a.currentTime = 0; a.volume = 1;
@@ -78,17 +103,55 @@ function speakChar(c) {
     } catch (e) { resolve(); }
   });
 }
-async function speakWord(w, gap = 70) {
+function zhVoice() {
+  if (!('speechSynthesis' in window)) return null;
+  try {
+    const vs = speechSynthesis.getVoices() || [];
+    return vs.find(v => /zh[-_]?CN/i.test(v.lang)) || vs.find(v => /^zh/i.test(v.lang)) || null;
+  } catch (e) { return null; }
+}
+function tts(text, rate = .85) {
+  return new Promise(resolve => {
+    if (S.mute || FAST || !('speechSynthesis' in window) || !text) return resolve(false);
+    let done = false;
+    const fin = v => { if (!done) { done = true; resolve(v); } };
+    try {
+      speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = 'zh-CN'; u.rate = rate; u.pitch = 1.05;
+      const v = zhVoice(); if (v) u.voice = v;
+      u.onend = () => fin(true); u.onerror = () => fin(false);
+      speechSynthesis.speak(u);
+      setTimeout(() => fin(true), 900 + text.length * 320);   // 兜底，防止个别浏览器不触发 onend
+    } catch (e) { fin(false); }
+  });
+}
+function speakChar(c) {
+  if (S.mute) return Promise.resolve();
+  if (MP3_CHARS.has(c)) return playMp3(c);
+  return tts(c, .8);
+}
+async function speakWord(w, gap) {
+  const g = gap === undefined ? (FAST ? 0 : 70) : gap;
   for (const c of w) {
     if (!/[，。！？、…·\s\-—]/.test(c)) await speakChar(c);
-    await delay(gap);
+    await delay(g);
   }
 }
 async function speakSentence(line) {
+  // 有中文语音时整句连读，语调更自然；否则用真人单字 MP3 依次拼读
+  if (zhVoice()) { await tts(line, .82); return; }
   for (const c of line) {
-    if (/[，。！？、…·\s\-—]/.test(c)) { await delay(240); continue; }
-    await speakChar(c); await delay(70);
+    if (/[，。！？、…·\s\-—]/.test(c)) { await delay(FAST ? 0 : 240); continue; }
+    await speakChar(c); await delay(FAST ? 0 : 70);
   }
+}
+function voiceInfo() { return {mp3: MP3_CHARS.size, total: TOTAL, tts: !!zhVoice()}; }
+if ('speechSynthesis' in window) {
+  try {
+    speechSynthesis.getVoices();   // 部分浏览器要等 voiceschanged 才返回语音列表
+    speechSynthesis.addEventListener && speechSynthesis.addEventListener('voiceschanged', () => speechSynthesis.getVoices());
+  } catch (e) {}
 }
 
 /* ---------------- 特效 ---------------- */
@@ -105,7 +168,7 @@ function floatText(txt, x, y, color) {
   el.className = 'float-txt'; el.textContent = txt;
   el.style.left = (x || innerWidth / 2) + 'px'; el.style.top = (y || innerHeight / 2) + 'px';
   if (color) el.style.color = color;
-  document.body.appendChild(el); setTimeout(() => el.remove(), 1150);
+  document.body.appendChild(el); setTimeout(() => el.remove(), FX(1150));
 }
 function confetti(n = 16) {
   const emo = ['⭐', '🎉', '💎', '✨', '🌟', '🎊'];
@@ -114,58 +177,95 @@ function confetti(n = 16) {
       const d = document.createElement('div');
       d.className = 'confetti'; d.textContent = pick(emo);
       d.style.left = (Math.random() * 96) + '%'; d.style.top = '-30px';
-      document.body.appendChild(d); setTimeout(() => d.remove(), 1800);
-    }, i * 60);
+      document.body.appendChild(d); setTimeout(() => d.remove(), FX(1800));
+    }, FX(i * 60));
   }
 }
 function updateChips() {
-  $('gemChip').textContent = `💎 ${S.gems.length} / 60`;
+  $('gemChip').textContent = `💎 ${S.gems.length} / ${TOTAL}`;
   $('starChip').textContent = `⭐ ${S.stars}`;
   $('muteBtn').textContent = S.mute ? '🔇' : '🔊';
 }
 function show(name) {
+  if (name !== 'echo' && F.recording >= 0) stopRec();
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('on'));
   $('scr-' + name).classList.add('on');
   SFX.page();
 }
 
 /* ---------------- 流程状态 ---------------- */
-let F = {book: 0, stage: 'home', learnIdx: 0, learnChars: [], pool: [], games: [], gi: 0, q: 0, combo: 0, traced: false, locked: false, answer: null};
+let F = {book: 0, stage: 'home', learnIdx: 0, learnChars: [], pool: [], recent: [],
+         games: [], gi: 0, q: 0, combo: 0, traced: false, locked: false,
+         echo: null, recording: -1, reading: false, echoSkipped: false};
 function learnedChars(bookIdx) {
-  return uniq(BOOKS.slice(0, bookIdx + 1).flatMap(b => b.chars));
+  const all = [];
+  for (let l = 1; l < S.level; l++) all.push(...LEVELS[l - 1].chars);
+  all.push(...BOOKS.slice(0, bookIdx + 1).flatMap(b => b.chars));
+  return uniq(all);
 }
 function startBook(i) {
   F.book = i; F.stage = 'story'; F.learnIdx = 0; F.q = 0; F.gi = 0; F.combo = 0;
+  F.echoSkipped = false; F.echo = null; F.recording = -1;
   F.learnChars = BOOKS[i].chars.slice();
   F.games = gamesForBook(i);
   F.pool = learnedChars(i);
-  const b = BOOKS[i];
-  $('storyTitle').textContent = `第 ${i + 1} 站 · ${b.zone}`;
+  F.recent = F.pool.slice(-22);
+  const b = BOOKS[i], L = LEVELS[S.level - 1];
+  $('storyTitle').textContent = `${L.name} · 第 ${i + 1} 站 · ${b.zone}`;
   $('storySpeech').textContent = `咩～这里是「${b.zone}」！${b.villain}只要认出这里的汉字宝石，能量就会回到汉字山！`;
   $('storyVillain').textContent = `迷雾怪：「嘿嘿，这些字你肯定不认识！」`;
-  $('storyMission').textContent = `🎯 任务：认 ${F.learnChars.length} 个新字 → 玩 2 个小游戏 → 自己读完一本小书`;
+  $('storyMission').textContent = `🎯 任务：认 ${F.learnChars.length} 个新字 → 玩 2 个小游戏 → 自己读 → 跟读全文`;
   show('story');
 }
+function goLevels() { F.stage = 'levels'; renderLevels(); show('levels'); }
 function goLearn() { F.stage = 'learn'; F.learnIdx = 0; renderLearn(); show('learn'); }
 function goGame() { F.stage = 'game'; F.gi = 0; F.q = 0; F.combo = 0; renderGame(); show('game'); }
 function goRead() { F.stage = 'read'; renderRead(); show('read'); }
+function goEcho() { F.stage = 'echo'; F.echoSkipped = false; renderEcho(); show('echo'); }
 function goAward() { F.stage = 'award'; finishBook(); renderAward(); show('award'); }
 function goMap() { F.stage = 'map'; renderMap(); show('map'); }
 
-/* ---------------- 首页 & 地图 ---------------- */
+/* ---------------- 选级 ---------------- */
+function renderLevels() {
+  $('levelGrid').innerHTML = LEVELS.map(l => {
+    const p = prog(l.level), pct = Math.round(p.done.length / 10 * 100);
+    const got = l.chars.filter(c => S.gems.includes(c)).length;
+    const done = p.done.length >= 10;
+    return `<div class="level-card ${done ? 'clear' : ''}" data-l="${l.level}" style="--lc:${l.color}">
+      <div class="lv-badge">${l.level}</div>
+      <div class="lv-body">
+        <div class="lv-name">${l.name}${done ? ' <span class="lv-ok">✅ 已通关</span>' : ''}</div>
+        <div class="lv-sub">${l.sub} · ${l.theme}</div>
+        <div class="lv-bar"><i style="width:${pct}%"></i></div>
+        <div class="lv-foot">📖 ${p.done.length}/10 册　🎤 ${p.echo.length}/10 本　💎 ${got}/${l.chars.length} 字</div>
+      </div>
+      <div class="lv-go">${p.done.length ? '继续 →' : '开始 →'}</div>
+    </div>`;
+  }).join('');
+  $('levelGrid').querySelectorAll('.level-card').forEach(el => {
+    el.onclick = () => { unlockAudio(); SFX.tap(); setLevel(+el.dataset.l); goMap(); };
+  });
+  $('levelSub').textContent = `全套 6 级 · 60 册绘本 · ${TOTAL} 个核心字 · 每本都能跟读全文`;
+}
+
+/* ---------------- 登山地图 ---------------- */
 function renderMap() {
+  const L = LEVELS[S.level - 1], p = prog();
+  $('mapTitle').textContent = `🗺️ ${L.name} · ${L.theme}`;
+  $('mapSub').textContent = `${L.sub} · 点亮 ${L.chars.length} 颗本级宝石，读完 10 册登顶！`;
   const wrap = $('mapWrap');
   wrap.querySelectorAll('.node').forEach(n => n.remove());
   const POS = [[9, 85], [27, 74], [45, 81], [62, 67], [79, 73], [87, 50], [70, 37], [50, 45], [30, 27], [15, 14]];
   BOOKS.forEach((b, i) => {
-    const locked = i > S.unlocked;
-    const done = S.done.includes(i);
+    const locked = i > p.unlocked;
+    const done = p.done.includes(i);
+    const echo = p.echo.includes(i);
     const n = document.createElement('div');
-    n.className = 'node' + (locked ? ' lock' : '') + (done ? ' done' : '') + (i === S.unlocked && !done ? ' cur' : '');
+    n.className = 'node' + (locked ? ' lock' : '') + (done ? ' done' : '') + (i === p.unlocked && !done ? ' cur' : '');
     n.style.left = POS[i][0] + '%'; n.style.top = POS[i][1] + '%';
     n.innerHTML = `<div class="node-badge">${locked ? '🔒' : b.emo}</div>
       <div class="node-name">${i + 1}. ${b.zone}</div>
-      <div class="node-sub">${done ? '✅ ' + b.badge : (locked ? '未解锁' : b.chars.join('') )}</div>
+      <div class="node-sub">${done ? (echo ? '🎤 ' : '✅ ') + b.badge : (locked ? '未解锁' : b.chars.join(''))}</div>
       ${done ? '<span class="tick">⭐</span>' : ''}`;
     n.onclick = () => {
       if (locked) { SFX.wrong(); floatText('先通过上一站哦！', innerWidth / 2, innerHeight / 2, '#fff'); return; }
@@ -179,10 +279,11 @@ function renderMap() {
 function renderLearn() {
   const c = F.learnChars[F.learnIdx];
   const info = CHARS[c];
-  $('learnTitle').textContent = `第 ${F.book + 1} 站 · 认字 ${F.learnIdx + 1}/${F.learnChars.length}`;
+  const L = LEVELS[S.level - 1];
+  $('learnTitle').textContent = `${L.name} · 第 ${F.book + 1} 站 · 认字 ${F.learnIdx + 1}/${F.learnChars.length}`;
   $('learnHint').textContent = info.x ? '看图画变汉字 → 听一听 → 描一描' : '听一听 → 组个词 → 描一描';
   $('bigChar').textContent = c;
-  $('charPinyin').textContent = '🔊 点字听读音';
+  $('charPinyin').textContent = MP3_CHARS.has(c) ? '🔊 点字听真人读音' : '🔊 点字听读音';
   $('picEmoji').textContent = info.e;
   $('picHint').textContent = info.h;
   $('traceChar').textContent = c;
@@ -190,13 +291,13 @@ function renderLearn() {
   F.traced = false;
   $('learnDots').innerHTML = F.learnChars.map((_, i) =>
     `<span class="pdot ${i < F.learnIdx ? 'done' : (i === F.learnIdx ? 'on' : '')}"></span>`).join('');
-  $('wordList').innerHTML = info.w.map(w => `<span class="word-pill" data-w="${w}">${w}</span>`).join('');
+  const ws = wordsFor(c, new Set(F.pool));
+  $('wordList').innerHTML = ws.map(w => `<span class="word-pill" data-w="${w}">${w}</span>`).join('');
   $('wordList').querySelectorAll('.word-pill').forEach(el => {
     el.onclick = () => { SFX.tap(); speakWord(el.dataset.w); };
   });
   $('charCard').onclick = () => { SFX.tap(); speakChar(c); };
   setupTrace();
-  // 象形演示：图画先出现，汉字再「长」出来
   if (info.x) {
     $('bigChar').style.opacity = '0';
     $('bigChar').style.transform = 'scale(.3)';
@@ -204,10 +305,10 @@ function renderLearn() {
     setTimeout(() => {
       $('bigChar').style.opacity = '1'; $('bigChar').style.transform = 'scale(1)';
       speakChar(c);
-    }, 780);
+    }, FX(780));
   } else {
     $('bigChar').style.opacity = '1'; $('bigChar').style.transform = 'scale(1)';
-    setTimeout(() => speakChar(c), 220);
+    setTimeout(() => speakChar(c), FX(220));
   }
 }
 function setupTrace() {
@@ -247,8 +348,8 @@ function setupTrace() {
 
 /* ---------------- 绘本自主阅读 ---------------- */
 function renderRead() {
-  const b = BOOKS[F.book];
-  $('readTitle').textContent = `📖 我自己读 · 第 ${F.book + 1} 本`;
+  const b = BOOKS[F.book], L = LEVELS[S.level - 1];
+  $('readTitle').textContent = `📖 我自己读 · ${L.name} 第 ${F.book + 1} 本`;
   $('bookTitle').textContent = b.book;
   const box = $('bookLines'); box.innerHTML = '';
   b.story.forEach(line => {
@@ -273,33 +374,138 @@ function renderRead() {
     };
     box.appendChild(row);
   });
-  $('bookFoot').textContent = '✨ 这些字你都认识啦，自己读一遍吧！';
+  $('bookFoot').textContent = '✨ 这些字你都认识啦，自己读一遍，再去跟读全文！';
+}
+
+/* ---------------- 跟读全文（示范 → 录音 → 回放 → 打卡） ---------------- */
+const REC = {stream: null, rec: null, chunks: [], line: -1};
+function echoInit() {
+  const n = BOOKS[F.book].story.length;
+  if (!F.echo) F.echo = {checked: Array(n).fill(false), audio: Array(n).fill(null)};
+  F.recording = -1;
+}
+function echoMsg(t) { $('echoTip').textContent = t; }
+function markLine(i, fromRec) {
+  if (F.echo.checked[i]) return;
+  F.echo.checked[i] = true;
+  S.stars += fromRec ? 4 : 2;
+  save(); updateChips(); SFX.right();
+  floatText(fromRec ? '录好啦！⭐⭐' : '读得真棒！⭐', innerWidth / 2, innerHeight * .45, '#ffe06a');
+}
+async function startRec(i) {
+  if (F.recording >= 0) return stopRec();
+  if (!navigator.mediaDevices || !window.MediaRecorder) {
+    echoMsg('这台设备不支持录音，点「✅ 读好啦」一样能过关哦～'); return;
+  }
+  try {
+    REC.stream = await navigator.mediaDevices.getUserMedia({audio: true});
+    REC.chunks = []; REC.line = i;
+    REC.rec = new MediaRecorder(REC.stream);
+    REC.rec.ondataavailable = e => { if (e.data && e.data.size) REC.chunks.push(e.data); };
+    REC.rec.onstop = () => {
+      try {
+        const blob = new Blob(REC.chunks, {type: REC.rec.mimeType || 'audio/webm'});
+        if (blob.size) F.echo.audio[i] = URL.createObjectURL(blob);
+      } catch (e) {}
+      if (REC.stream) { REC.stream.getTracks().forEach(t => t.stop()); REC.stream = null; }
+      F.recording = -1; markLine(i, true); renderEcho();
+    };
+    REC.rec.start();
+    F.recording = i; SFX.rec(); renderEcho();
+    echoMsg('🎤 正在录音……大声读这一句，读完点「⏹ 停一停」');
+    setTimeout(() => { if (F.recording === i) stopRec(); }, 9000);
+  } catch (e) {
+    echoMsg('麦克风没打开（可以点「✅ 读好啦」自己读，也一样棒！）');
+    if (REC.stream) { REC.stream.getTracks().forEach(t => t.stop()); REC.stream = null; }
+  }
+}
+function stopRec() {
+  if (REC.rec && REC.rec.state === 'recording') { try { REC.rec.stop(); } catch (e) {} }
+  else { F.recording = -1; }
+}
+function playMyVoice(i) {
+  const url = F.echo.audio[i]; if (!url) return;
+  const a = new Audio(url); a.play().catch(() => {});
+  echoMsg('▶ 听听自己的声音，是不是很棒？');
+}
+async function echoReadAll() {
+  if (F.reading) return;
+  F.reading = true;
+  const lines = BOOKS[F.book].story;
+  for (let i = 0; i < lines.length; i++) {
+    if (F.stage !== 'echo') break;
+    document.querySelectorAll('.echo-line').forEach((el, j) => el.classList.toggle('playing', j === i));
+    echoMsg(`🔊 小羊读第 ${i + 1} 句：${lines[i]}`);
+    await speakSentence(lines[i]);
+    await delay(FAST ? 0 : 240);
+  }
+  document.querySelectorAll('.echo-line').forEach(el => el.classList.remove('playing'));
+  F.reading = false;
+  echoMsg('✨ 听完啦！现在一句一句跟着读吧～');
+}
+function renderEcho() {
+  echoInit();
+  const b = BOOKS[F.book], L = LEVELS[S.level - 1], lines = b.story;
+  $('echoTitle').textContent = `🎤 跟读全文 · ${L.name} 第 ${F.book + 1} 本`;
+  $('echoBook').textContent = b.book;
+  const done = F.echo.checked.filter(Boolean).length;
+  $('echoProg').textContent = `已跟读 ${done} / ${lines.length} 句`;
+  $('echoStars').innerHTML = lines.map((_, i) =>
+    `<span class="estar ${F.echo.checked[i] ? 'lit' : ''}" style="animation-delay:${i * .12}s">★</span>`).join('');
+  $('echoCheer').textContent = done >= lines.length ? '🎉 整本都读完啦！你是朗读小达人！'
+    : (done ? `已经点亮 ${done} 颗星星，再读 ${lines.length - done} 句就满啦！` : '大声读出来，小羊在听哦！');
+  echoMsg('① 点「🔊 听示范」→ ② 点「🎤 我来读」录下自己的声音 → ③ 点「✅ 读好啦」');
+  $('echoList').innerHTML = lines.map((line, i) => `
+    <div class="echo-line ${F.echo.checked[i] ? 'ok' : ''} ${F.recording === i ? 'rec' : ''}" data-i="${i}">
+      <div class="echo-no">${i + 1}</div>
+      <div class="echo-text">${line}</div>
+      <div class="echo-ops">
+        <button class="mini" data-act="listen" data-i="${i}">🔊 听示范</button>
+        <button class="mini ${F.recording === i ? 'hot' : ''}" data-act="rec" data-i="${i}">${F.recording === i ? '⏹ 停一停' : '🎤 我来读'}</button>
+        ${F.echo.audio[i] ? `<button class="mini" data-act="play" data-i="${i}">▶ 听我的</button>` : ''}
+        <button class="mini okbtn" data-act="ok" data-i="${i}">${F.echo.checked[i] ? '✅ 读过啦' : '✅ 读好啦'}</button>
+      </div>
+    </div>`).join('');
+  $('echoList').querySelectorAll('button.mini').forEach(btn => {
+    btn.onclick = () => {
+      const i = +btn.dataset.i, act = btn.dataset.act;
+      unlockAudio(); SFX.tap();
+      if (act === 'listen') { echoMsg('🔊 听：' + lines[i]); speakSentence(lines[i]); }
+      else if (act === 'rec') startRec(i);
+      else if (act === 'play') playMyVoice(i);
+      else if (act === 'ok') { markLine(i, false); renderEcho(); }
+    };
+  });
+  $('echoDone').textContent = done >= lines.length ? '🏅 全部读完，领奖状！' : `🏅 我全读完啦（${done}/${lines.length}）`;
 }
 
 /* ---------------- 通关结算 & 奖状 ---------------- */
 function finishBook() {
-  const b = BOOKS[F.book];
+  const b = BOOKS[F.book], p = prog();
   let gained = 0;
   b.chars.forEach(c => { if (!S.gems.includes(c)) { S.gems.push(c); gained++; } });
-  if (!S.done.includes(F.book)) S.done.push(F.book);
-  S.stars += 5 + F.learnChars.length * 2 + gained;
-  S.unlocked = Math.max(S.unlocked, Math.min(BOOKS.length - 1, F.book + 1));
+  if (!p.done.includes(F.book)) p.done.push(F.book);
+  const echoOK = !F.echoSkipped && F.echo && F.echo.checked.length && F.echo.checked.every(Boolean);
+  if (echoOK && !p.echo.includes(F.book)) p.echo.push(F.book);
+  S.stars += 5 + F.learnChars.length * 2 + gained + (echoOK ? 6 : 0);
+  p.unlocked = Math.max(p.unlocked, Math.min(BOOKS.length - 1, F.book + 1));
   S.best = Math.max(S.best, F.combo);
   save(); updateChips(); confetti(22); SFX.win();
-  F.gained = gained;
+  F.gained = gained; F.echoOK = !!echoOK;
 }
 function renderAward() {
-  const b = BOOKS[F.book];
+  const b = BOOKS[F.book], L = LEVELS[S.level - 1];
   const last = F.book === BOOKS.length - 1;
-  $('awardTitle').textContent = last ? '👑 你登上汉字山啦！' : `🎉 获得「${b.badge}」`;
+  $('awardTitle').textContent = last ? `👑 ${L.name} 全部读完啦！` : `🎉 获得「${b.badge}」`;
   $('awardGems').innerHTML = b.chars.map((c, i) =>
     `<div class="gem-mini" style="animation-delay:${i * .09}s" title="${c}"></div>`).join('');
-  $('awardNext').textContent = last ? '🏆 看看我的宝石' : '下一站 →';
+  $('awardBadge').textContent = F.echoOK ? '🎤 本册跟读全文完成 · 朗读小达人 +6⭐' : '📖 本册自主阅读完成';
+  $('awardNext').textContent = last ? '🏆 选下一级' : '下一站 →';
   drawCert();
 }
 function drawCert() {
   const cv = $('certCanvas'), g = cv.getContext('2d');
-  const b = BOOKS[F.book];
+  const b = BOOKS[F.book], L = LEVELS[S.level - 1];
   g.fillStyle = '#fffaf0'; g.fillRect(0, 0, 1000, 660);
   g.strokeStyle = '#e8bd5c'; g.lineWidth = 16; g.strokeRect(24, 24, 952, 612);
   g.strokeStyle = '#f4d999'; g.lineWidth = 3; g.strokeRect(44, 44, 912, 572);
@@ -308,59 +514,71 @@ function drawCert() {
   g.fillStyle = '#b4761d'; g.font = 'bold 54px KaiTi,STKaiti,serif';
   g.fillText('阅 读 小 勇 士 奖 状', 500, 258);
   g.fillStyle = '#6b5630'; g.font = '30px KaiTi,STKaiti,serif';
-  g.fillText(`恭喜你读完 ${b.book}`, 500, 322);
+  g.fillText(`恭喜你读完 ${L.name} ${b.book}`, 500, 322);
   g.fillText(`在「${b.zone}」认识了 ${b.chars.length} 个汉字宝石`, 500, 370);
   g.fillStyle = '#2f3b6e'; g.font = 'bold 46px KaiTi,STKaiti,serif';
   g.fillText(b.chars.join('  '), 500, 440);
-  g.fillStyle = '#a0793d'; g.font = '24px "Microsoft YaHei",sans-serif';
-  g.fillText(`徽章：${b.badge}　·　已收集 ${S.gems.length} / 60 颗宝石　·　⭐ ${S.stars}`, 500, 510);
+  g.fillStyle = F.echoOK ? '#c2601c' : '#a0793d'; g.font = 'bold 26px "Microsoft YaHei",sans-serif';
+  g.fillText(F.echoOK ? '🎤 跟读全文完成 · 朗读小达人' : `徽章：${b.badge}`, 500, 500);
+  g.fillStyle = '#a0793d'; g.font = '22px "Microsoft YaHei",sans-serif';
+  g.fillText(`已收集 ${S.gems.length} / ${TOTAL} 颗宝石　·　⭐ ${S.stars}`, 500, 540);
   g.fillStyle = '#9a8a68'; g.font = '20px "Microsoft YaHei",sans-serif';
-  g.fillText(new Date().toLocaleDateString('zh-CN') + '　小羊上山 · 汉字山能量大冒险', 500, 578);
-  g.font = '40px serif'; g.fillText('⭐', 150, 560); g.fillText('⭐', 850, 560);
+  g.fillText(new Date().toLocaleDateString('zh-CN') + '　小羊上山 · 汉字山能量大冒险', 500, 590);
 }
 
 /* ---------------- 图鉴 / 家长 ---------------- */
 function renderDex() {
-  $('dexSub').textContent = `已点亮 ${S.gems.length} / 60 颗 · 点亮的宝石可以点一下听发音`;
-  $('dexGrid').innerHTML = BOOKS.flatMap(b => b.chars).map(c => {
-    const got = S.gems.includes(c);
-    return `<div class="dex-cell ${got ? 'got' : ''}" data-c="${got ? c : ''}">${got ? c : '·'}</div>`;
-  }).join('');
+  $('dexSub').textContent = `全套 1~6 级 ${TOTAL} 字 · 已点亮 ${S.gems.length} 颗 · 点亮的宝石可以听发音`;
+  $('dexGrid').innerHTML = LEVELS.map(l => `
+    <div class="dex-sec" style="--lc:${l.color}">${l.name} · ${l.sub}</div>` +
+    l.chars.map(c => {
+      const got = S.gems.includes(c);
+      return `<div class="dex-cell ${got ? 'got' : ''}" data-c="${got ? c : ''}">${got ? c : '·'}</div>`;
+    }).join('')).join('');
   $('dexGrid').querySelectorAll('.dex-cell.got').forEach(el => {
     el.onclick = () => { SFX.tap(); speakChar(el.dataset.c);
       floatText(el.dataset.c, innerWidth / 2, innerHeight / 2, '#ffe06a'); };
   });
 }
 function renderParent() {
+  const v = voiceInfo();
   $('parentNote').innerHTML = `
     <b>这套游戏按什么编的？</b><br>
-    严格依据《小羊上山儿童汉语分级读物》<b>第 1 级 60 个核心字</b>，按 10 册分成 10 个登山站点。
-    每册的词语、绘本短句<b>只使用本册及之前学过的字</b>——这是分级读物最核心的编写原则，
-    孩子认完几个新字就能自己读完一页，成就感才是坚持下来的动力。<br><br>
-    <b>一关怎么玩（约 5 分钟）</b><br>
-    ① <b>认字</b>：图画变汉字 → 真人发音 → 组词 → 手指描红（不考笔顺，重在参与）<br>
+    依据《小羊上山儿童汉语分级读物》<b>1~6 级</b>公开整理字表，按官方分级字数编排：
+    60 / 120 / 180 / 240 / 310 / 390 字，每级 10 册，共 <b>60 册绘本</b>。
+    词语和绘本短句<b>只使用本级及之前学过的字</b>——这是分级读物最核心的编写原则。
+    个别整理表缺字用同级高频常用字补齐；<b>绘本为配合游戏的原创改写，不是原书全文</b>。<br><br>
+    <b>一关怎么玩（约 6 分钟）</b><br>
+    ① <b>认字</b>：图画变汉字 → 发音 → 组词 → 手指描红（不考笔顺，重在参与）<br>
     ② <b>玩 2 个小游戏</b>：抢宝石 / 敲迷雾怪 / 谁不见了 / 对对碰 / 词语拼拼乐，逐关轮换<br>
-    ③ <b>自己读</b>：点单字听发音，点整句听小羊朗读，读完领一张可保存的奖状<br><br>
-    <b>参考了哪些识字产品的做法</b><br>
-    悟空识字的「剧情闯关 + 象形演示」、洪恩识字的「玩认练写闭环 + 每几字一复习」、
-    叫叫识字的「每天 6 字 + 次日复习」、以及教材配套的「字卡游戏 / 读后小游戏 / 荣誉证书」。
-    针对 5 岁男孩加入了怪兽、宝石收集、连击、即时音效和登山进度。<br><br>
+    ③ <b>自己读</b>：点单字听发音，点整句听小羊朗读<br>
+    ④ <b>🎤 跟读全文</b>：逐句听示范 → 按「我来读」录下孩子的声音 → 回放给自己听 → 逐句打卡。
+    也能一键「听整本」连续朗读。麦克风没打开也没关系，点「✅ 读好啦」或「先不跟读」同样能过关。<br><br>
     <b>发音说明</b><br>
-    60 个单字是仓库自带的真人录音，<b>离线也能听</b>；其余音效由浏览器合成。
-    首次点击页面会解锁声音，右下角 🔊 可静音。进度自动保存在本机浏览器里。<br><br>
-    <b>建议</b>：每天 1 站，读完请真的夸一句。孩子卡住时别直接报答案，陪他再点一次喇叭。`;
+    有真人录音的 <b>${v.mp3} / ${v.total}</b> 个字用仓库自带的 MP3（离线也能听），
+    其余字用<b>浏览器中文语音</b>朗读${v.tts ? '（本机已检测到中文语音 ✅）' : '（本机暂未检测到中文语音，建议用 Chrome / Edge 打开）'}。
+    整句朗读优先用中文语音，语调更自然；没有语音时自动退回单字拼读。
+    首次点击页面会解锁声音，右下角 🔊 可静音。<br><br>
+    <b>参考了哪些识字产品的做法</b><br>
+    悟空识字的「剧情闯关 + 象形演示」、洪恩识字的「玩认练写闭环」、
+    叫叫识字的「每天几字 + 次日复习」、以及教材配套的「字卡游戏 / 读后小游戏 / 荣誉证书」，
+    再加上分级读物官方推荐的「家长读多 → 孩子读多 → 独立阅读 → 朗读」三步过渡。<br><br>
+    <b>建议</b>：5 岁孩子从第 1 级开始，每天 1 册；跟读环节请真的听一遍孩子的录音并夸一句。
+    进度按级别分别保存在本机浏览器里，换级别不会丢。读完 10 册会自动提示挑战下一级。`;
 }
 
 /* ---------------- 顶栏 / 按钮 ---------------- */
 function bindUI() {
-  $('startBtn').onclick = () => { unlockAudio(); SFX.tap(); goMap(); };
+  $('startBtn').onclick = () => { unlockAudio(); SFX.tap(); goLevels(); };
   $('dexHomeBtn').onclick = () => { unlockAudio(); renderDex(); show('dex'); F.dexFrom = 'home'; };
   $('dexBtn').onclick = () => { unlockAudio(); renderDex(); show('dex'); F.dexFrom = F.stage; };
-  $('dexBack').onclick = () => { show(F.dexFrom === 'home' ? 'home' : 'map'); };
+  $('dexBack').onclick = () => { show(F.dexFrom === 'home' ? 'home' : (F.dexFrom === 'levels' ? 'levels' : 'map')); };
   $('homeBtn').onclick = () => { show('home'); };
   $('muteBtn').onclick = () => { S.mute = !S.mute; save(); updateChips(); if (!S.mute) { unlockAudio(); SFX.right(); } };
   $('parentBtn').onclick = () => { renderParent(); show('parent'); };
   $('parentBack').onclick = () => show('home');
+  $('levelBack').onclick = () => show('home');
+  $('mapBack').onclick = () => goLevels();
   $('storyGo').onclick = () => { unlockAudio(); SFX.tap(); goLearn(); };
   $('learnBack').onclick = () => { renderLearn(); };
   $('learnNext').onclick = () => {
@@ -369,18 +587,29 @@ function bindUI() {
     F.learnIdx++;
     if (F.learnIdx >= F.learnChars.length) goGame(); else renderLearn();
   };
-  $('readDone').onclick = () => { unlockAudio(); goAward(); };
+  $('readEcho').onclick = () => { unlockAudio(); goEcho(); };
+  $('readDone').onclick = () => { unlockAudio(); F.echoSkipped = true; goAward(); };
+  $('echoBack').onclick = () => goRead();
+  $('echoAll').onclick = () => { unlockAudio(); echoReadAll(); };
+  $('echoDone').onclick = () => {
+    unlockAudio();
+    if (F.echo) { F.echo.checked = F.echo.checked.map(() => true); }
+    goAward();
+  };
+  $('echoSkip').onclick = () => { F.echoSkipped = true; goAward(); };
   $('certDown').onclick = () => {
     const a = document.createElement('a');
-    a.download = `小羊上山-第${F.book + 1}站奖状.png`;
+    a.download = `小羊上山-第${S.level}级-第${F.book + 1}册奖状.png`;
     a.href = $('certCanvas').toDataURL('image/png'); a.click(); SFX.tap();
   };
   $('awardNext').onclick = () => {
-    if (F.book === BOOKS.length - 1) { renderDex(); F.dexFrom = 'home'; show('dex'); }
-    else goMap();
+    if (F.book === BOOKS.length - 1) {
+      goLevels();
+      floatText(prog().done.length >= 10 ? '本级通关！试试下一级吧 🎉' : '继续加油！', innerWidth / 2, innerHeight * .45, '#ffe06a');
+    } else goMap();
   };
   $('resetBtn').onclick = () => {
-    if (!confirm('确定清空所有进度，从头开始吗？')) return;
-    S = {...DEFAULT, done: [], gems: []}; save(); updateChips(); renderDex(); SFX.page();
+    if (!confirm('确定清空所有级别的全部进度，从头开始吗？')) return;
+    S = normalize({...DEFAULT, prog: {}}); save(); updateChips(); renderDex(); SFX.page();
   };
 }
