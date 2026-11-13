@@ -91,6 +91,8 @@ const SFX = {
 
 /* 真人单字 MP3（构建时注入清单）；没有录音的字用浏览器中文语音 */
 const MP3_CHARS = new Set(/*__MP3_CHARS__*/ '');
+/* 笔顺数据（构建时注入：每字 {s: 笔画SVG路径[], m: 中线点[][]})，用于描红引导箭头 */
+const STROKES = /*__STROKES__*/ {};
 const audioCache = {};
 function playMp3(c) {
   return new Promise(resolve => {
@@ -287,7 +289,7 @@ function renderLearn() {
   $('picEmoji').textContent = info.e;
   $('picHint').textContent = info.h;
   $('traceChar').textContent = c;
-  $('traceTip').textContent = '✏️ 用手指在格子里描一描';
+  $('traceTip').textContent = '✏️ 看编号箭头，照顺序描一描';
   F.traced = false;
   $('learnDots').innerHTML = F.learnChars.map((_, i) =>
     `<span class="pdot ${i < F.learnIdx ? 'done' : (i === F.learnIdx ? 'on' : '')}"></span>`).join('');
@@ -311,6 +313,78 @@ function renderLearn() {
     setTimeout(() => speakChar(c), FX(220));
   }
 }
+/* 笔顺引导：把标准笔顺数据画成「淡色字形模板 + 编号起笔点 + 方向箭头」，
+   并可「看示范」逐笔写一遍。坐标来自 hanzi-writer-data（Make Me a Hanzi），
+   原始坐标 y 向上、范围 0~1024，需变换到 300×300 画布：x*K, (900-y)*K，K=300/1024 */
+const TR_K = 300 / 1024;
+const traceState = {char: null, strokes: null, demoTimer: null};
+function trXY(p) { return [p[0] * TR_K, (900 - p[1]) * TR_K]; }
+function guideTransform(g) { g.setTransform(TR_K, 0, 0, -TR_K, 0, 900 * TR_K); }
+
+function clearGuide() {
+  const g = $('traceGuide').getContext('2d');
+  g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, 300, 300);
+}
+/* 画一字的笔顺引导：template=淡色字形，arrows=编号起点+方向箭头 */
+function drawGuide(c, opts) {
+  opts = opts || {};
+  const g = $('traceGuide').getContext('2d');
+  clearGuide();
+  const d = STROKES[c];
+  if (!d) return;
+  const upTo = opts.upTo == null ? d.s.length : opts.upTo;     /* 示范时只画到第 upTo 笔 */
+  const cur = opts.cur == null ? -1 : opts.cur;                /* 当前正在写的这一笔（高亮） */
+  // 字形模板（淡色）
+  guideTransform(g);
+  for (let i = 0; i < upTo; i++) {
+    g.lineJoin = g.lineCap = 'round';
+    g.strokeStyle = (i === cur) ? 'rgba(255,122,47,.95)' : 'rgba(225,170,110,.5)';
+    g.lineWidth = (i === cur) ? 13 : 11;
+    g.beginPath(); g.stroke(new Path2D(d.s[i]));
+  }
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  if (!opts.arrows) return;
+  // 编号起笔点 + 方向箭头
+  for (let i = 0; i < d.m.length; i++) {
+    const med = d.m[i]; if (!med || !med.length) continue;
+    const a = trXY(med[0]);
+    let b = med[Math.min(3, med.length - 1)];
+    const ab = [b[0] - med[0][0], b[1] - med[0][1]];
+    const len = Math.hypot(ab[0], ab[1]) || 1;
+    const ux = ab[0] / len, uy = ab[1] / len;
+    const tip = [a[0] + ux * 15, a[1] + uy * 15];
+    // 方向箭头（细线 + 三角）
+    g.strokeStyle = '#ff7a2f'; g.fillStyle = '#ff7a2f'; g.lineWidth = 2.4; g.lineCap = 'round';
+    g.beginPath(); g.moveTo(a[0], a[1]); g.lineTo(tip[0], tip[1]); g.stroke();
+    const ang = Math.atan2(uy, ux);
+    g.beginPath();
+    g.moveTo(tip[0], tip[1]);
+    g.lineTo(tip[0] - 7 * Math.cos(ang - 0.5), tip[1] - 7 * Math.sin(ang - 0.5));
+    g.lineTo(tip[0] - 7 * Math.cos(ang + 0.5), tip[1] - 7 * Math.sin(ang + 0.5));
+    g.closePath(); g.fill();
+    // 起笔编号
+    g.beginPath(); g.arc(a[0], a[1], 9.5, 0, Math.PI * 2);
+    g.fillStyle = '#ff7a2f'; g.fill();
+    g.fillStyle = '#fff'; g.font = 'bold 13px sans-serif';
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillText(String(i + 1), a[0], a[1] + 0.5);
+  }
+}
+/* 看示范：逐笔写一遍（高亮当前笔 + 已写笔），写完恢复模板+箭头 */
+function playDemo() {
+  const c = traceState.char; if (!c || !traceState.strokes) return;
+  const n = traceState.strokes.s.length;
+  if (traceState.demoTimer) { clearInterval(traceState.demoTimer); traceState.demoTimer = null; }
+  let k = 0;
+  const step = () => {
+    if (k > n) { drawGuide(c, {arrows: true}); traceState.demoTimer = null; return; }
+    drawGuide(c, {upTo: k, cur: k - 1, arrows: k <= n});
+    k++;
+  };
+  step();
+  traceState.demoTimer = setInterval(step, 420);
+}
+
 function setupTrace() {
   const cv = $('traceCanvas'), ctx = cv.getContext('2d');
   ctx.clearRect(0, 0, 300, 300);
@@ -319,6 +393,16 @@ function setupTrace() {
     ctx.beginPath(); ctx.moveTo(l[0], l[1]); ctx.lineTo(l[2], l[3]); ctx.stroke();
   });
   ctx.setLineDash([]);
+  const c = $('traceChar').textContent;
+  traceState.char = c; traceState.strokes = STROKES[c] || null;
+  if (traceState.demoTimer) { clearInterval(traceState.demoTimer); traceState.demoTimer = null; }
+  if (traceState.strokes) {                       /* 有笔顺数据：用引导层，隐藏 DOM 字形 */
+    $('traceChar').classList.add('hide');
+    drawGuide(c, {arrows: true});
+  } else {                                         /* 没数据：退回淡色字模板 */
+    $('traceChar').classList.remove('hide');
+    clearGuide();
+  }
   const cells = new Set();
   let drawing = false, last = null, done = false;
   const pos = e => {
@@ -379,10 +463,13 @@ function renderRead() {
 
 /* ---------------- 跟读全文（示范 → 录音 → 回放 → 打卡） ---------------- */
 const REC = {stream: null, rec: null, chunks: [], line: -1};
+/* 本机是否支持录音（有麦克风 API + MediaRecorder）。不支持时走降级通道 */
+function recSupported() { return !!(navigator.mediaDevices && window.MediaRecorder); }
 function echoInit() {
   const n = BOOKS[F.book].story.length;
   if (!F.echo) F.echo = {checked: Array(n).fill(false), audio: Array(n).fill(null)};
   F.recording = -1;
+  F.micOK = recSupported();          /* 默认按“支持”处理，被拒/不可用会在 startRec 里改回 false */
 }
 function echoMsg(t) { $('echoTip').textContent = t; }
 function markLine(i, fromRec) {
@@ -395,6 +482,7 @@ function markLine(i, fromRec) {
 async function startRec(i) {
   if (F.recording >= 0) return stopRec();
   if (!navigator.mediaDevices || !window.MediaRecorder) {
+    F.micOK = false; renderEcho();           /* 不支持录音：开放降级通道，不卡住 */
     echoMsg('这台设备不支持录音，点「✅ 读好啦」一样能过关哦～'); return;
   }
   try {
@@ -415,6 +503,7 @@ async function startRec(i) {
     echoMsg('🎤 正在录音……大声读这一句，读完点「⏹ 停一停」');
     setTimeout(() => { if (F.recording === i) stopRec(); }, 9000);
   } catch (e) {
+    F.micOK = false; renderEcho();           /* 麦克风被拒/不可用：开放降级通道 */
     echoMsg('麦克风没打开（可以点「✅ 读好啦」自己读，也一样棒！）');
     if (REC.stream) { REC.stream.getTracks().forEach(t => t.stop()); REC.stream = null; }
   }
@@ -463,7 +552,7 @@ function renderEcho() {
         <button class="mini" data-act="listen" data-i="${i}">🔊 听示范</button>
         <button class="mini ${F.recording === i ? 'hot' : ''}" data-act="rec" data-i="${i}">${F.recording === i ? '⏹ 停一停' : '🎤 我来读'}</button>
         ${F.echo.audio[i] ? `<button class="mini" data-act="play" data-i="${i}">▶ 听我的</button>` : ''}
-        <button class="mini okbtn" data-act="ok" data-i="${i}">${F.echo.checked[i] ? '✅ 读过啦' : '✅ 读好啦'}</button>
+        <button class="mini okbtn ${F.micOK && !F.echo.audio[i] && !F.echo.checked[i] ? 'need-rec' : ''}" data-act="ok" data-i="${i}">${F.echo.checked[i] ? '✅ 读过啦' : (F.micOK && !F.echo.audio[i] ? '🔒 先录音' : '✅ 读好啦')}</button>
       </div>
     </div>`).join('');
   $('echoList').querySelectorAll('button.mini').forEach(btn => {
@@ -473,7 +562,14 @@ function renderEcho() {
       if (act === 'listen') { echoMsg('🔊 听：' + lines[i]); speakSentence(lines[i]); }
       else if (act === 'rec') startRec(i);
       else if (act === 'play') playMyVoice(i);
-      else if (act === 'ok') { markLine(i, false); renderEcho(); }
+      else if (act === 'ok') {
+        /* 麦克风可用时必须先录这一句，否则只是“看”没“读”，不能算打卡 */
+        if (F.micOK && !F.echo.audio[i]) {
+          echoMsg('先录一下这一句吧～🎤 点「我来读」，读完点「⏹ 停一停」，再点读好啦');
+          return;
+        }
+        markLine(i, false); renderEcho();
+      }
     };
   });
   $('echoDone').textContent = done >= lines.length ? '🏅 全部读完，领奖状！' : `🏅 我全读完啦（${done}/${lines.length}）`;
@@ -587,12 +683,19 @@ function bindUI() {
     F.learnIdx++;
     if (F.learnIdx >= F.learnChars.length) goGame(); else renderLearn();
   };
+  $('traceDemo').onclick = () => { unlockAudio(); SFX.tap(); playDemo(); };
   $('readEcho').onclick = () => { unlockAudio(); goEcho(); };
   $('readDone').onclick = () => { unlockAudio(); F.echoSkipped = true; goAward(); };
   $('echoBack').onclick = () => goRead();
   $('echoAll').onclick = () => { unlockAudio(); echoReadAll(); };
   $('echoDone').onclick = () => {
     unlockAudio();
+    /* 麦克风可用时，必须每句都录过音才能领奖状，防止没读就直接过关 */
+    if (F.micOK && F.echo && F.echo.audio.some(a => !a)) {
+      const left = F.echo.audio.filter(a => !a).length;
+      echoMsg(`还有 ${left} 句没录呢～🎤 点「我来读」录完每一句，再点领奖状`);
+      return;
+    }
     if (F.echo) { F.echo.checked = F.echo.checked.map(() => true); }
     goAward();
   };

@@ -19,10 +19,17 @@ const marker = "/*__MP3_CHARS__*/ ''";
 if (!js.includes(marker)) throw new Error('core.js 缺少 MP3_CHARS 注入标记');
 js = js.replace(marker, JSON.stringify(mp3chars));
 
+/* 注入笔顺数据（描红引导箭头用） */
+let strokes = {};
+try { strokes = JSON.parse(fs.readFileSync(path.join(dir, 'strokes.json'), 'utf8')); } catch (e) {}
+const marker2 = "/*__STROKES__*/ {}";
+if (!js.includes(marker2)) throw new Error('core.js 缺少 STROKES 注入标记');
+js = js.replace(marker2, JSON.stringify(strokes));
+
 const html = shell
   .replace('/*CSS*/', () => css)
   .replace('/*JS*/', () => js);
 
 fs.writeFileSync(path.join(dir, 'index.html'), html, 'utf8');
 console.log('built index.html:', (Buffer.byteLength(html, 'utf8') / 1024).toFixed(1) + ' KB',
-  '| mp3 chars:', mp3chars.length);
+  '| mp3 chars:', mp3chars.length, '| stroke chars:', Object.keys(strokes).length);

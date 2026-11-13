@@ -149,11 +149,15 @@ p.sub{font-size:14px;color:#7a6b4d;text-align:center;line-height:1.7;margin-bott
 .trace-card{background:#fff;border-radius:24px;padding:10px 12px;border:3px solid #ffdca0;text-align:center;
   box-shadow:0 8px 18px rgba(30,40,90,.14)}
 .trace-wrap{position:relative;width:150px;height:150px;margin:6px auto 0;touch-action:none}
-.trace-wrap canvas{position:absolute;inset:0;width:150px;height:150px;border-radius:12px;z-index:2;
+.trace-wrap canvas{position:absolute;inset:0;width:150px;height:150px;border-radius:12px;
   background:transparent;border:2px solid #e9b46a;cursor:crosshair}
-.trace-char{position:absolute;inset:0;z-index:1;display:grid;place-items:center;font-family:var(--kai);
+.trace-char{position:absolute;inset:0;z-index:0;display:grid;place-items:center;font-family:var(--kai);
   font-size:112px;color:#ddcfae;pointer-events:none;line-height:1}
+#traceGuide{position:absolute;inset:0;z-index:1;pointer-events:none}
+#traceCanvas{z-index:2}
+.trace-char.hide{display:none}
 .trace-tip{font-size:12px;color:#9a7b3e;font-weight:800}
+.trace-card .btn.tiny{margin:8px auto 0;display:block;font-size:14px;padding:7px 18px}
 
 /* ---------- 小游戏通用 ---------- */
 .game-head{display:flex;align-items:center;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:4px}
@@ -365,6 +369,7 @@ button.mini{border:2px solid #e6cd91;background:linear-gradient(180deg,#fff,#ffe
 button.mini:hover{background:#ffe08a;transform:translateY(-1px)}
 button.mini.hot{border-color:#ff6b6b;background:#ffe1e1;color:#c33}
 button.mini.okbtn{border-color:#8ed9ae;background:#e8fff0;color:#20865a}
+button.mini.need-rec{opacity:.5;filter:grayscale(.4);cursor:not-allowed;background:#f3ece0;border-color:#d8cdb4;color:#9a8a67}
 .award-badge{font-size:14px;font-weight:900;color:#c2601c;background:#fff0c4;border-radius:999px;padding:4px 16px}
 .dex-sec{grid-column:1/-1;font-size:14px;font-weight:900;color:#fff;background:var(--lc);
   border-radius:10px;padding:5px 12px;margin-top:6px;letter-spacing:1px}
