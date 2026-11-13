@@ -1,641 +1,1533 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0, minimum-scale=1.0, viewport-fit=cover">
-  <title>小羊上山识字大冒险 · 流畅词组版</title>
-  <style>
-    * {
-      margin: 0; padding: 0; box-sizing: border-box;
-      -webkit-tap-highlight-color: transparent; user-select: none;
-      font-family: "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif;
-    }
-    body {
-      background: linear-gradient(180deg, #b8e4b0 0%, #d4f0d0 30%, #fef9e4 70%, #ffe6b3 100%);
-      min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 10px; margin: 0;
-    }
-    .game-container {
-      width: 100%; max-width: 500px; background: rgba(255,251,235,0.85); backdrop-filter: blur(8px);
-      border-radius: 40px; box-shadow: 0 20px 40px rgba(0,0,0,0.15); padding: 20px 15px 25px;
-      display: flex; flex-direction: column; align-items: center; position: relative; min-height: 90vh;
-    }
-    .header { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; }
-    .sheep-icon { font-size: 42px; animation: bounce 1.2s infinite alternate; }
-    @keyframes bounce { 0% { transform: translateY(0); } 100% { transform: translateY(-8px); } }
-    .title { font-size: 28px; font-weight: 800; color: #4a6b2f; text-shadow: 2px 2px 0 #fff; }
-    .star-counter {
-      background: #ffe484; border-radius: 30px; padding: 6px 18px; font-weight: bold;
-      color: #7b5e3b; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 8px rgba(0,0,0,0.08);
-      margin-bottom: 10px;
-    }
-    .screen { width: 100%; display: flex; flex-direction: column; align-items: center; flex: 1; }
-    .hidden { display: none !important; }
-    .start-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; }
-    .big-btn {
-      background: #ffb84d; border: none; border-radius: 50px; padding: 16px 40px; font-size: 28px;
-      font-weight: 700; color: #fff; letter-spacing: 4px; box-shadow: 0 10px 0 #d68c2c; cursor: pointer;
-      transition: all 0.1s; margin: 10px 0; -webkit-tap-highlight-color: transparent;
-    }
-    .big-btn:active { transform: translateY(6px); box-shadow: 0 4px 0 #d68c2c; background: #ffa32b; }
-    .level-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; width: 100%; margin-top: 10px; }
-    .level-card {
-      background: #ffffffdd; border-radius: 25px; padding: 15px 8px; text-align: center;
-      box-shadow: 0 8px 16px rgba(0,0,0,0.1); cursor: pointer; border: 3px solid #e0d7b0;
-    }
-    .level-card:active { transform: scale(0.94); background: #fffef0; }
-    .level-card.locked { filter: grayscale(0.5); background: #e9e3d0; color: #aaa; }
-    .group-grid { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin: 20px 0; }
-    .group-btn {
-      width: 58px; height: 58px; border-radius: 50%; background: #ffe9c4; border: 3px solid #deb887;
-      font-weight: bold; font-size: 18px; color: #6b4f32; display: flex; align-items: center;
-      justify-content: center; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    }
-    .group-btn:active { transform: scale(0.9); background: #f7d98c; }
-    .group-btn.completed { background: #b2e0a8; border-color: #6b9e4a; color: #2d5720; position: relative; }
-    .group-btn.completed::after { content: "⭐"; font-size: 20px; position: absolute; top: -8px; right: -6px; }
-    .group-btn.locked { opacity: 0.5; pointer-events: none; background: #ddd8cb; border-color: #bbb; color: #999; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#2a3b7d">
+<title>小羊上山 · 汉字山能量大冒险</title>
+<style>*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{
+  --ink:#25325c; --cream:#fffaf0; --gold:#ffcb4b; --orange:#ff8a4c;
+  --green:#43c08a; --teal:#38b6c9; --purple:#9a6cf0; --red:#ff6b6b;
+  --kai:"KaiTi","STKaiti","Kaiti SC","Microsoft YaHei","PingFang SC",sans-serif;
+  --ui:"PingFang SC","Microsoft YaHei","Noto Sans SC",sans-serif;
+}
+html,body{height:100%}
+body{
+  font-family:var(--ui);color:var(--ink);overflow:hidden;
+  background:linear-gradient(180deg,#1b2a63 0%,#2f4d8f 26%,#4c8fb0 52%,#7fc9a5 78%,#bfe6a5 100%);
+  display:flex;align-items:center;justify-content:center;
+}
+body.nofx *,body.nofx *::before,body.nofx *::after{animation:none!important;transition:none!important}
+#stars-bg{position:fixed;inset:0;pointer-events:none;z-index:0}
+.sky-star{position:absolute;width:3px;height:3px;border-radius:50%;background:#fff;opacity:.7;animation:twinkle 2.6s infinite ease-in-out}
+@keyframes twinkle{0%,100%{opacity:.2;transform:scale(.7)}50%{opacity:1;transform:scale(1.35)}}
+.mtn{position:fixed;bottom:0;left:0;width:100%;pointer-events:none;z-index:0}
+.cloud{position:fixed;z-index:0;pointer-events:none;opacity:.55;animation:drift 26s linear infinite}
+@keyframes drift{from{transform:translateX(-160px)}to{transform:translateX(110vw)}}
 
-    .audio-play-btn {
-      width: 90px; height: 90px; background: #ffb84d; border-radius: 50%; display: flex; align-items: center;
-      justify-content: center; font-size: 45px; cursor: pointer; box-shadow: 0 8px 0 #d68c2c;
-      margin: 10px auto 20px; transition: transform 0.1s;
-    }
-    .audio-play-btn:active { transform: translateY(4px); box-shadow: 0 4px 0 #d68c2c; background: #ffa32b; }
-    .audio-play-btn.playing { background: #ff9f00; }
-    .hint-text { font-size: 18px; color: #5e4b2b; margin-bottom: 10px; }
-    .options-grid {
-      display: grid; grid-template-columns: 1fr 1fr; gap: 15px; width: 100%; margin-top: 15px;
-    }
-    .option-card {
-      background: #fffbf0; border: 4px solid #d4b68a; border-radius: 30px; padding: 15px 5px;
-      font-size: 55px; font-weight: bold; color: #5d4037; text-align: center; cursor: pointer;
-      box-shadow: 0 6px 12px rgba(0,0,0,0.08); transition: 0.1s;
-    }
-    .option-card:active { transform: scale(0.94); background: #f5e7c8; }
-    .option-card.correct-highlight { background: #c8f7c5 !important; border-color: #4caf50 !important; animation: pop 0.35s; }
-    .option-card.wrong-flash { background: #ffcdd2 !important; border-color: #e53935 !important; animation: shake 0.4s; }
-    @keyframes shake { 0%,100%{ transform: translateX(0); } 25%{ transform: translateX(-8px); } 75%{ transform: translateX(8px); } }
-    @keyframes pop { 0%{ transform: scale(1); } 50%{ transform: scale(1.08); } 100%{ transform: scale(1); } }
-    .message-box { font-size: 20px; font-weight: 600; color: #3e6b27; margin: 8px 0; min-height: 32px; text-align: center; }
-    .btn {
-      background: #ffb84d; border: none; border-radius: 40px; padding: 12px 28px; font-size: 20px;
-      font-weight: 700; color: #fff; letter-spacing: 2px; box-shadow: 0 6px 0 #d68c2c; cursor: pointer;
-      margin: 5px; -webkit-tap-highlight-color: transparent;
-    }
-    .btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #d68c2c; background: #ffa32b; }
-    .btn.back { background: #b0c4de; box-shadow: 0 6px 0 #7a8fa6; }
-    .progress-bar { width: 100%; background: #e0d7c6; border-radius: 20px; height: 16px; margin: 8px 0; overflow: hidden; }
-    .progress-fill { height: 100%; background: #f9a825; border-radius: 20px; transition: width 0.3s; }
-    .star-rain {
-      position: fixed; pointer-events: none; font-size: 32px; animation: starFall 1.2s ease-out forwards; z-index: 100;
-    }
-    @keyframes starFall {
-      0% { opacity: 1; transform: translateY(0) rotate(0deg); } 100% { opacity: 0; transform: translateY(160px) rotate(200deg); }
-    }
-    .retry-hint { font-size: 16px; color: #e53935; }
-    .mode-hint { font-size: 14px; color: #8b7a4c; background: #fffae9; border-radius: 20px; padding: 4px 16px; margin-bottom: 5px; }
-  </style>
+#app{position:relative;z-index:2;width:min(100vw,960px);min-width:0;height:min(100vh,760px);
+  display:flex;align-items:center;justify-content:center;padding:10px}
+.frame{width:100%;height:100%;min-width:0;max-width:940px;max-height:740px;position:relative;
+  background:linear-gradient(170deg,rgba(255,252,240,.97),rgba(255,246,220,.97));
+  border-radius:32px;border:6px solid rgba(255,255,255,.85);
+  box-shadow:0 22px 60px rgba(9,20,60,.5),inset 0 0 0 3px rgba(255,203,75,.55);
+  overflow:hidden;display:flex;flex-direction:column}
+
+/* ---------- 顶栏 ---------- */
+.topbar{height:58px;flex:0 0 58px;display:flex;align-items:center;gap:10px;padding:0 16px;
+  background:linear-gradient(90deg,#2a3b7d,#3f5aa8);color:#fff;box-shadow:0 3px 10px rgba(0,0,0,.18);z-index:5}
+.logo-mark{font-size:26px;line-height:1;animation:bob 1.5s infinite ease-in-out}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+.top-title{font-size:18px;font-weight:900;letter-spacing:1px;text-shadow:0 2px 0 rgba(0,0,0,.25)}
+.top-title small{font-size:10px;opacity:.75;letter-spacing:2px;display:block;font-weight:600}
+.chip{display:flex;align-items:center;gap:5px;background:rgba(0,0,0,.25);border-radius:20px;
+  padding:5px 11px;font-size:14px;font-weight:800;white-space:nowrap}
+.chip.gold{background:linear-gradient(180deg,#ffd977,#f3ad2f);color:#6b4310;text-shadow:none}
+.spacer{flex:1}
+.icon-btn{width:36px;height:36px;border-radius:50%;border:0;background:rgba(255,255,255,.18);
+  color:#fff;font-size:18px;cursor:pointer;display:grid;place-items:center;transition:.15s}
+.icon-btn:hover{background:rgba(255,255,255,.32);transform:scale(1.08)}
+
+/* ---------- 通用 ---------- */
+.screen{display:none;min-width:0;flex:1;flex-direction:column;align-items:center;padding:14px 18px 18px;overflow:auto;min-height:0}
+.screen.on{display:flex;animation:fadeUp .3s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.screen::-webkit-scrollbar{width:7px}.screen::-webkit-scrollbar-thumb{background:#d9c79a;border-radius:8px}
+h2.big{font-size:27px;font-weight:900;color:#2b3c78;letter-spacing:1px;text-align:center;margin:2px 0 4px}
+p.sub{font-size:14px;color:#7a6b4d;text-align:center;line-height:1.7;margin-bottom:8px}
+.btn{border:0;cursor:pointer;font-family:var(--ui);font-weight:900;color:#fff;font-size:21px;letter-spacing:2px;
+  padding:13px 34px;border-radius:999px;background:linear-gradient(180deg,#ff9e56,#f4732f);
+  box-shadow:0 7px 0 #c4561d,0 12px 20px rgba(180,80,20,.28);transition:.1s;white-space:nowrap}
+.btn:active{transform:translateY(5px);box-shadow:0 2px 0 #c4561d,0 5px 10px rgba(180,80,20,.28)}
+.btn.blue{background:linear-gradient(180deg,#5fa8f5,#3476d6);box-shadow:0 7px 0 #25539f,0 12px 20px rgba(30,70,160,.25)}
+.btn.blue:active{box-shadow:0 2px 0 #25539f}
+.btn.green{background:linear-gradient(180deg,#67d69a,#35ae73);box-shadow:0 7px 0 #238356,0 12px 20px rgba(30,130,80,.25)}
+.btn.green:active{box-shadow:0 2px 0 #238356}
+.btn.ghost{background:linear-gradient(180deg,#fff,#f0e6cd);color:#7a6134;box-shadow:0 6px 0 #cbb88e;font-size:16px;padding:9px 20px}
+.btn.ghost:active{box-shadow:0 2px 0 #cbb88e}
+.btn.small{font-size:16px;padding:9px 20px;box-shadow-width:5px}
+.btn[disabled]{filter:grayscale(.7);opacity:.6;pointer-events:none}
+.row{display:flex;align-items:center;gap:12px;justify-content:center;flex-wrap:wrap}
+.hint{background:#fff3cf;border:2px dashed #e8c46e;border-radius:16px;padding:8px 16px;
+  font-size:14px;color:#7d6027;font-weight:700;text-align:center;max-width:680px}
+.progress-dots{display:flex;gap:7px;justify-content:center;margin:6px 0}
+.pdot{width:11px;height:11px;border-radius:50%;background:#ddd0ae;box-shadow:inset 0 -2px 0 rgba(0,0,0,.1)}
+.pdot.on{background:var(--gold);transform:scale(1.18)}
+.pdot.done{background:var(--green)}
+
+/* ---------- 首页 ---------- */
+.home-wrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;position:relative;width:100%}
+.home-title{font-size:46px;font-weight:900;letter-spacing:3px;line-height:1.15;text-align:center;
+  background:linear-gradient(180deg,#fff 0%,#ffe49a 45%,#f5a93f 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 3px 0 #8c4a12) drop-shadow(0 7px 12px rgba(20,30,80,.5))}
+.home-sub{font-size:14px;letter-spacing:6px;color:#ffe9b8;font-weight:800;
+  text-shadow:0 2px 6px rgba(0,0,0,.5);margin-bottom:2px}
+.home-scene{position:relative;width:100%;height:230px;display:flex;align-items:flex-end;justify-content:center}
+.hero-sheep{width:170px;height:170px;z-index:3;animation:bob 1.4s infinite ease-in-out;filter:drop-shadow(0 12px 12px rgba(0,0,0,.3))}
+.hero-villain{position:absolute;right:12%;bottom:44px;width:96px;height:96px;z-index:2;animation:floaty 2.2s infinite ease-in-out}
+@keyframes floaty{0%,100%{transform:translateY(0) rotate(-6deg)}50%{transform:translateY(-14px) rotate(6deg)}}
+.hero-gem{position:absolute;width:40px;height:46px;z-index:4;animation:gemSpin 4s linear infinite}
+@keyframes gemSpin{0%,100%{transform:translateY(0) rotate(-8deg)}50%{transform:translateY(-12px) rotate(8deg)}}
+.home-ground{position:absolute;bottom:0;width:100%;height:66px;border-radius:50% 50% 0 0;
+  background:linear-gradient(180deg,#7fd18d,#459b62);box-shadow:inset 0 8px 0 rgba(255,255,255,.2)}
+.home-btns{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:10px;z-index:5}
+.home-tip{font-size:12px;color:#f7e7bd;text-shadow:0 1px 4px rgba(0,0,0,.6);margin-top:8px}
+.home-panel{background:linear-gradient(165deg,rgba(42,60,138,.95),rgba(21,35,90,.95));border-radius:28px;
+  padding:16px 26px 22px;box-shadow:0 18px 40px rgba(0,0,0,.28);border:2px solid rgba(255,255,255,.18);
+  width:min(560px,94%);display:flex;flex-direction:column;align-items:center}
+
+/* ---------- 登山地图 ---------- */
+.map-wrap{position:relative;width:100%;max-width:820px;flex:1;min-height:400px;margin:0 auto}
+.map-path{position:absolute;inset:0;width:100%;height:100%;z-index:0}
+.node{position:absolute;transform:translate(-50%,-50%);z-index:2;width:118px;text-align:center;cursor:pointer;transition:.18s}
+.node:hover{transform:translate(-50%,-50%) scale(1.08)}
+.node-badge{width:70px;height:70px;margin:0 auto;border-radius:50%;display:grid;place-items:center;
+  font-size:34px;background:linear-gradient(180deg,#fff,#ffe9bd);border:4px solid #fff;
+  box-shadow:0 8px 0 rgba(120,90,30,.35),0 12px 20px rgba(0,0,0,.25);position:relative}
+.node-badge::after{content:"";position:absolute;inset:-8px;border-radius:50%;border:3px dashed rgba(255,255,255,.6);animation:spin 14s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.node.cur .node-badge{background:linear-gradient(180deg,#ffe89a,#ffb43f);border-color:#fff6d8;
+  box-shadow:0 8px 0 #c47c17,0 0 26px 8px rgba(255,205,80,.65)}
+.node.done .node-badge{background:linear-gradient(180deg,#c9f5d8,#78d79d);border-color:#eafff1}
+.node.lock .node-badge{filter:grayscale(1);opacity:.6;box-shadow:0 6px 0 rgba(80,80,80,.3)}
+.node-name{display:block;width:max-content;margin:8px auto 0;font-size:12px;font-weight:900;color:#2b3c78;white-space:nowrap;background:rgba(255,255,255,.9);border-radius:10px;padding:2px 7px;box-shadow:0 2px 5px rgba(0,0,0,.15)}
+.node-sub{display:block;width:max-content;margin:3px auto 0;font-size:10px;color:#7c5d24;white-space:nowrap;background:rgba(255,246,214,.94);border-radius:8px;padding:1px 6px}
+.node .tick{position:absolute;top:-6px;right:18px;font-size:22px;filter:drop-shadow(0 2px 2px rgba(0,0,0,.4))}
+
+/* ---------- 剧情 ---------- */
+.story-box{display:flex;align-items:center;gap:20px;background:rgba(255,255,255,.94);border-radius:28px;
+  padding:18px 24px;box-shadow:0 12px 30px rgba(20,30,80,.22);width:min(720px,96%);margin:auto 0}
+.story-box svg{flex:0 0 auto}
+.speech{background:#fff2cd;border-radius:20px;padding:14px 18px;font-size:17px;line-height:1.8;
+  font-weight:800;color:#63491f;position:relative;box-shadow:inset 0 0 0 2px #f0d18a}
+.speech::before{content:"";position:absolute;left:-12px;top:38%;border:8px solid transparent;border-right-color:#fff2cd}
+.story-villain{font-size:15px;color:#7a55b8;font-weight:900;margin-top:8px}
+.mission{background:linear-gradient(90deg,#3d54a5,#5b78d0);color:#fff;border-radius:18px;
+  padding:10px 20px;font-size:15px;font-weight:800;letter-spacing:1px;margin:12px 0;text-align:center}
+
+/* ---------- 认字 ---------- */
+.learn-wrap{width:min(780px,100%);display:flex;flex-direction:column;align-items:center;gap:8px;flex:1;min-height:0}
+.learn-main{display:flex;gap:16px;width:100%;align-items:stretch;justify-content:center;flex:1;min-height:0}
+.char-card{width:250px;flex:0 0 250px;background:linear-gradient(180deg,#fff,#fff3d4);border-radius:26px;
+  border:5px solid #fff;box-shadow:0 10px 0 #e3c887,0 16px 26px rgba(60,40,10,.2);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;padding:12px;position:relative;cursor:pointer}
+.char-card:active{transform:scale(.97)}
+.big-char{position:relative;z-index:1;font-family:var(--kai);font-size:132px;font-weight:700;line-height:1.15;color:#2f3b6e;
+  text-shadow:3px 4px 0 #fff,6px 8px 0 rgba(80,90,140,.18)}
+.grid-bg{position:absolute;width:190px;height:190px;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;opacity:.5}
+.speaker{position:absolute;top:10px;right:12px;width:38px;height:38px;border-radius:50%;
+  background:var(--gold);display:grid;place-items:center;font-size:20px;box-shadow:0 4px 0 #c99520}
+.char-pinyin{position:relative;z-index:2;font-size:13px;font-weight:800;color:#9a7b3e;letter-spacing:1px;background:rgba(255,250,235,.92);border-radius:12px;padding:2px 9px;margin-top:2px}
+.side-card{flex:1;min-width:250px;display:flex;flex-direction:column;gap:10px;justify-content:center}
+.pic-card{background:#fff;border-radius:24px;padding:12px;text-align:center;box-shadow:0 8px 18px rgba(30,40,90,.16);
+  border:3px solid #ffe1a3;min-height:140px;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.pic-emoji{font-size:62px;line-height:1.1;animation:bob 1.8s infinite ease-in-out}
+.pic-hint{font-size:14px;color:#6b5733;font-weight:800;line-height:1.6;margin-top:6px}
+.word-card{background:linear-gradient(180deg,#e9f4ff,#d3e7ff);border-radius:22px;padding:12px;
+  border:3px solid #b9d6ff;text-align:center}
+.word-label{font-size:12px;color:#5b7dab;font-weight:800;letter-spacing:2px}
+.word-list{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:7px}
+.word-pill{background:#fff;border-radius:14px;padding:6px 12px;font-family:var(--kai);font-size:22px;
+  font-weight:800;color:#2c4c86;box-shadow:0 3px 0 #b6cdea;cursor:pointer}
+.word-pill:active{transform:translateY(2px);box-shadow:0 1px 0 #b6cdea}
+/* 田字格描红 */
+.trace-card{background:#fff;border-radius:24px;padding:10px 12px;border:3px solid #ffdca0;text-align:center;
+  box-shadow:0 8px 18px rgba(30,40,90,.14)}
+.trace-wrap{position:relative;width:150px;height:150px;margin:6px auto 0;touch-action:none}
+.trace-wrap canvas{position:absolute;inset:0;width:150px;height:150px;border-radius:12px;z-index:2;
+  background:transparent;border:2px solid #e9b46a;cursor:crosshair}
+.trace-char{position:absolute;inset:0;z-index:1;display:grid;place-items:center;font-family:var(--kai);
+  font-size:112px;color:#ddcfae;pointer-events:none;line-height:1}
+.trace-tip{font-size:12px;color:#9a7b3e;font-weight:800}
+
+/* ---------- 小游戏通用 ---------- */
+.game-head{display:flex;align-items:center;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:4px}
+.game-title{font-size:22px;font-weight:900;color:#2b3c78}
+.combo{background:linear-gradient(180deg,#ff9a5a,#f45d3c);color:#fff;border-radius:16px;
+  padding:4px 12px;font-size:14px;font-weight:900;box-shadow:0 4px 0 #c4431f;display:none}
+.combo.on{display:block;animation:pop .3s}
+@keyframes pop{0%{transform:scale(.6)}60%{transform:scale(1.25)}100%{transform:scale(1)}}
+.listen-btn{width:78px;height:78px;border-radius:50%;border:5px solid #fff;cursor:pointer;
+  background:linear-gradient(180deg,#ffd873,#f5a623);box-shadow:0 7px 0 #c47c17,0 12px 22px rgba(180,110,20,.3);
+  font-size:38px;display:grid;place-items:center;margin:4px auto 10px;transition:.1s}
+.listen-btn:active{transform:translateY(5px);box-shadow:0 2px 0 #c47c17}
+.listen-btn.playing{animation:pulse .6s infinite}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}
+.tile-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;width:min(520px,96%);margin:0 auto}
+.tile{background:linear-gradient(180deg,#fff,#ffedc9);border:4px solid #fff;border-radius:24px;
+  min-height:96px;display:grid;place-items:center;font-family:var(--kai);font-size:56px;font-weight:800;
+  color:#33406f;cursor:pointer;box-shadow:0 7px 0 #d4b678,0 12px 20px rgba(60,40,10,.18);transition:.1s;position:relative}
+.tile:active{transform:translateY(4px);box-shadow:0 3px 0 #d4b678}
+.tile.right{background:linear-gradient(180deg,#bdf5cf,#7ddf9e);border-color:#eafff1;animation:pop .3s}
+.tile.wrong{background:linear-gradient(180deg,#ffd0d0,#ff9d9d);animation:shake .35s}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+.gem-tile{clip-path:polygon(50% 0,93% 25%,93% 75%,50% 100%,7% 75%,7% 25%);
+  background:linear-gradient(160deg,#8fe3ff,#4a8ff0 55%,#6a53d8);border:0;border-radius:0;
+  box-shadow:none;color:#fff;text-shadow:0 3px 6px rgba(0,0,0,.35);min-height:112px}
+.gem-tile:nth-child(2){background:linear-gradient(160deg,#ffd98e,#f59a3f 55%,#e2614e)}
+.gem-tile:nth-child(3){background:linear-gradient(160deg,#b7f5c8,#43c08a 55%,#2a92a5)}
+.gem-tile:nth-child(4){background:linear-gradient(160deg,#e3c4ff,#a06cf0 55%,#6a53d8)}
+.gem-tile:active{transform:translateY(4px) scale(.96)}
+.gem-tile.right{background:linear-gradient(160deg,#fff6b0,#ffd34a);color:#7a4a00;text-shadow:none}
+/* 打怪兽 */
+.whack-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;width:min(560px,96%);margin:0 auto}
+.hole{height:118px;border-radius:20px;background:radial-gradient(ellipse at 50% 78%,#6b4a2a,#3c2815);
+  position:relative;overflow:hidden;box-shadow:inset 0 6px 14px rgba(0,0,0,.55);display:flex;align-items:flex-end;justify-content:center}
+.monster{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  cursor:pointer;transform:translateY(120%);transition:transform .22s cubic-bezier(.2,1.4,.5,1);position:relative}
+.monster.up{transform:translateY(0)}
+.monster-body{width:74px;height:64px;border-radius:46% 46% 40% 40%;
+  background:linear-gradient(180deg,#bb92ff,#7a4fd0);border:3px solid #fff;position:relative;
+  box-shadow:0 6px 12px rgba(0,0,0,.3);display:grid;place-items:center}
+.monster-body::before,.monster-body::after{content:"";position:absolute;top:-12px;width:16px;height:18px;
+  background:#7a4fd0;border-radius:50% 50% 0 0;border:3px solid #fff;border-bottom:0}
+.monster-body::before{left:8px;transform:rotate(-24deg)}.monster-body::after{right:8px;transform:rotate(24deg)}
+.monster-eye{width:13px;height:15px;background:#fff;border-radius:50%;position:absolute;top:16px;
+  box-shadow:0 0 0 2px #33215c}
+.monster-eye.l{left:16px}.monster-eye.r{right:16px}
+.monster-eye::after{content:"";position:absolute;width:6px;height:7px;background:#26204a;border-radius:50%;bottom:2px;left:3px}
+.monster-sign{font-family:var(--kai);font-size:32px;font-weight:900;color:#fff;
+  background:#3b2a6b;border:3px solid #fff;border-radius:12px;padding:0 10px;line-height:1.2;margin-top:-4px;z-index:2}
+.monster.hit{animation:hit .35s}
+@keyframes hit{0%{transform:scale(1)}50%{transform:scale(.7) rotate(16deg)}100%{transform:scale(1)}}
+/* 谁不见了 */
+.memory-row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin:10px 0}
+.mem-card{width:82px;height:96px;border-radius:18px;background:linear-gradient(180deg,#fff,#ffe9c0);
+  border:4px solid #fff;box-shadow:0 6px 0 #d4b678;display:grid;place-items:center;
+  font-family:var(--kai);font-size:48px;font-weight:800;color:#33406f;cursor:pointer}
+.mem-card.covered{background:linear-gradient(180deg,#7d8cdb,#4a5aa5);color:transparent;
+  font-size:0;position:relative}
+.mem-card.covered::after{content:"?";font-size:40px;color:#fff;font-family:var(--ui);font-weight:900}
+.mem-card.picked{outline:5px solid var(--gold)}
+/* 对对碰 */
+.match-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;width:min(560px,96%);margin:0 auto}
+.match-card{height:86px;border-radius:16px;background:linear-gradient(180deg,#6f86d8,#465bb0);
+  border:3px solid #fff;cursor:pointer;display:grid;place-items:center;color:#fff;font-size:36px;
+  box-shadow:0 5px 0 #2c3c80;transition:.15s;position:relative;font-weight:900}
+.match-card.flip{background:linear-gradient(180deg,#fff,#ffedc9);color:#33406f;
+  font-family:var(--kai);font-size:42px;box-shadow:0 5px 0 #d4b678}
+.match-card.matched{background:linear-gradient(180deg,#c9f5d8,#7ddf9e);color:#1f6b45;
+  font-family:var(--kai);font-size:42px;opacity:.75;pointer-events:none}
+/* 组词 */
+.build-slots{display:flex;gap:10px;justify-content:center;margin:12px 0}
+.slot{width:92px;height:96px;border-radius:18px;border:4px dashed #e2bd76;background:#fff8e4;
+  display:grid;place-items:center;font-family:var(--kai);font-size:52px;font-weight:800;color:#33406f}
+.slot.filled{border-style:solid;background:#fff;box-shadow:0 5px 0 #d4b678}
+.build-pool{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin:8px 0;max-width:560px}
+.pool-tile{width:68px;height:72px;border-radius:16px;background:linear-gradient(180deg,#fff,#ffe9c0);
+  border:3px solid #fff;box-shadow:0 5px 0 #d4b678;display:grid;place-items:center;
+  font-family:var(--kai);font-size:38px;font-weight:800;color:#33406f;cursor:pointer}
+.pool-tile:active{transform:translateY(3px);box-shadow:0 2px 0 #d4b678}
+.pool-tile.used{opacity:.25;pointer-events:none}
+.msg{font-size:19px;font-weight:900;color:#2d6b48;min-height:30px;text-align:center;margin:4px}
+.msg.bad{color:#d64b4b}
+
+/* ---------- 绘本 ---------- */
+.book{width:min(700px,98%);background:linear-gradient(180deg,#fffdf4,#fff3d8);border-radius:22px;
+  border:5px solid #fff;box-shadow:0 12px 0 #dcc38c,0 20px 32px rgba(60,40,10,.22);
+  padding:20px 22px;position:relative;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;min-height:0}
+.book::before{display:none}
+.book-title{font-size:20px;font-weight:900;color:#a06a2c;letter-spacing:2px}
+.book-lines{display:flex;flex-direction:column;gap:12px;align-items:center;width:100%}
+.book-line{display:flex;gap:2px;flex-wrap:wrap;justify-content:center;align-items:center;cursor:pointer;
+  padding:4px 8px;border-radius:14px;transition:.15s}
+.book-line:hover{background:#fff0c4}
+.book-line.read{background:#e4f7e8}
+.hz{font-family:var(--kai);font-size:44px;font-weight:800;color:#2f3b6e;line-height:1.35;
+  padding:0 2px;border-radius:8px;transition:.12s;min-width:46px;text-align:center}
+.hz:hover{background:#ffe08a;transform:translateY(-3px)}
+.hz.speaking{background:#ffd34a;transform:scale(1.15)}
+.punc{font-family:var(--kai);font-size:40px;color:#9a8a67;line-height:1.35}
+.book-foot{font-size:13px;color:#9a8151;font-weight:700}
+
+/* ---------- 结算 / 奖状 ---------- */
+.award-wrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:6px;overflow:auto;padding:4px 0}
+.medal{width:100px;height:100px;flex:0 0 auto;animation:medalIn .7s cubic-bezier(.2,1.4,.5,1)}
+@keyframes medalIn{0%{transform:scale(0) rotate(-180deg)}100%{transform:scale(1) rotate(0)}}
+.award-title{font-size:26px;font-weight:900;color:#c0781d;text-shadow:0 3px 0 #fff,0 5px 8px rgba(120,80,0,.2)}
+.award-row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.gem-mini{width:34px;height:38px;clip-path:polygon(50% 0,93% 25%,93% 75%,50% 100%,7% 75%,7% 25%);
+  background:linear-gradient(160deg,#8fe3ff,#4a8ff0);animation:gemIn .4s backwards}
+@keyframes gemIn{from{transform:scale(0) translateY(-30px);opacity:0}to{transform:scale(1);opacity:1}}
+#certCanvas{width:auto;height:auto;max-width:min(560px,88%);max-height:42vh;flex:0 0 auto;border-radius:14px;box-shadow:0 14px 30px rgba(0,0,0,.3)}
+/* 图鉴 */
+.dex-grid{display:grid;grid-template-columns:repeat(10,1fr);gap:7px;width:min(720px,100%);margin:8px auto}
+.dex-cell{aspect-ratio:1;border-radius:12px;background:#e7dfc9;display:grid;place-items:center;
+  font-family:var(--kai);font-size:22px;font-weight:800;color:#b3a88e;cursor:pointer;
+  box-shadow:inset 0 -3px 0 rgba(0,0,0,.08);transition:.15s}
+.dex-cell.got{background:linear-gradient(160deg,#fff2bf,#ffcf5c);color:#5a4310;
+  box-shadow:0 4px 0 #d3a331,0 0 12px rgba(255,200,70,.5)}
+.dex-cell.got:active{transform:scale(.9)}
+/* 家长说明 */
+.parent-note{font-size:13px;color:#6c5c3c;line-height:1.9;background:#fff8e2;border-radius:18px;
+  padding:14px 18px;border:2px solid #f0dca8;max-width:640px;text-align:left}
+.parent-note b{color:#a56b1d}
+/* 飘字 / 彩带 */
+.float-txt{position:fixed;z-index:99;pointer-events:none;font-size:30px;font-weight:900;
+  color:#ffd34a;text-shadow:0 3px 0 #a35a10,0 6px 12px rgba(0,0,0,.4);animation:floatUp 1.1s ease-out forwards}
+@keyframes floatUp{0%{opacity:0;transform:translateY(10px) scale(.6)}25%{opacity:1;transform:translateY(-10px) scale(1.2)}100%{opacity:0;transform:translateY(-90px) scale(1)}}
+.confetti{position:fixed;z-index:98;pointer-events:none;font-size:22px;animation:fall 1.7s linear forwards}
+@keyframes fall{0%{transform:translateY(-30px) rotate(0);opacity:1}100%{transform:translateY(90vh) rotate(720deg);opacity:0}}
+/* 小屏适配 */
+@media (max-width:720px){
+  .frame{border-radius:22px;border-width:4px}
+  .topbar{height:50px;flex-basis:50px;padding:0 8px;gap:6px}
+  .logo-mark{font-size:20px}
+  .top-title{font-size:13px}
+  .top-title small{display:none}
+  .chip{font-size:11px;padding:3px 7px}
+  #starChip{display:none}
+  .icon-btn{width:30px;height:30px;font-size:15px}
+  .home-title{font-size:34px}.home-scene{height:180px}.hero-sheep{width:130px;height:130px}
+  .learn-main{flex-direction:column;align-items:center;overflow:auto}
+  .char-card{width:190px;flex:0 0 auto;padding:8px}.big-char{font-size:96px}
+  .grid-bg{width:140px;height:140px;top:16px}.side-card{width:100%;min-width:0}
+  .pic-card{min-height:100px}.pic-emoji{font-size:44px}.trace-wrap{width:120px;height:120px}
+  .trace-wrap canvas{width:120px;height:120px}.trace-char{font-size:88px}
+  .screen{padding:10px 12px 12px}
+  .game-head{flex-direction:column;gap:4px}
+  .hint{font-size:12px;padding:6px 12px}
+  .learn-main{gap:8px}
+  .char-card{width:150px;padding:6px}.big-char{font-size:78px}
+  .grid-bg{width:132px;height:132px}.speaker{width:30px;height:30px;font-size:16px}
+  .char-pinyin{font-size:11px;padding:1px 6px}
+  .pic-card{min-height:74px;padding:6px}.pic-emoji{font-size:34px}
+  .pic-hint{font-size:11px;margin-top:2px}
+  .word-card{padding:6px}.word-label{font-size:10px}
+  .word-pill{font-size:18px;padding:4px 9px}
+  .trace-card{padding:6px}.trace-tip{font-size:11px}
+  .trace-wrap{width:104px;height:104px;margin:3px auto 0}
+  .trace-wrap canvas{width:104px;height:104px}.trace-char{font-size:76px}
+  .hz{font-size:26px;min-width:28px}.punc{font-size:24px}
+  .book{padding:12px 10px;gap:8px}.book-lines{gap:6px}
+  .dex-grid{grid-template-columns:repeat(8,1fr);gap:5px}.dex-cell{font-size:17px}
+  .node{width:92px}.node-badge{width:56px;height:56px;font-size:26px}.node-name{font-size:11px}
+  .story-box{flex-direction:column;gap:10px;padding:12px}
+  .tile{font-size:44px;min-height:80px}.gem-tile{min-height:92px}
+  .match-card{height:70px;font-size:30px}.mem-card{width:66px;height:78px;font-size:38px}
+  .btn{font-size:18px;padding:11px 24px}
+}
+</style>
 </head>
 <body>
-<div class="game-container" id="app">
-  <div class="header"><span class="sheep-icon">🐑</span><span class="title">小羊上山</span></div>
-  <div class="star-counter" id="starDisplay">⭐ 0 颗星星</div>
+<!-- ===== 可复用的手绘角色 ===== -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="ic-sheep" viewBox="0 0 200 200">
+      <!-- 披风 -->
+      <path d="M46 118 Q100 98 154 118 L168 172 Q100 190 32 172 Z" fill="#ef5d57"/>
+      <path d="M46 118 Q100 98 154 118 L158 132 Q100 114 42 132 Z" fill="#ff7c6b"/>
+      <!-- 身体云朵 -->
+      <g fill="#fffdf5" stroke="#e6dcc4" stroke-width="3">
+        <circle cx="66" cy="118" r="27"/><circle cx="100" cy="106" r="33"/>
+        <circle cx="136" cy="118" r="27"/><circle cx="82" cy="140" r="25"/><circle cx="120" cy="140" r="25"/>
+      </g>
+      <!-- 腿 -->
+      <rect x="74" y="158" width="13" height="26" rx="6" fill="#4a3b35"/>
+      <rect x="114" y="158" width="13" height="26" rx="6" fill="#4a3b35"/>
+      <!-- 脸 -->
+      <ellipse cx="100" cy="94" rx="36" ry="38" fill="#f6e3c8" stroke="#d9b98f" stroke-width="3"/>
+      <!-- 耳朵 -->
+      <ellipse cx="62" cy="86" rx="16" ry="10" fill="#f6e3c8" stroke="#d9b98f" stroke-width="3" transform="rotate(-18 62 86)"/>
+      <ellipse cx="138" cy="86" rx="16" ry="10" fill="#f6e3c8" stroke="#d9b98f" stroke-width="3" transform="rotate(18 138 86)"/>
+      <!-- 卷毛 -->
+      <g fill="#fffdf5" stroke="#e6dcc4" stroke-width="2.5">
+        <circle cx="76" cy="60" r="14"/><circle cx="100" cy="53" r="16"/><circle cx="124" cy="60" r="14"/>
+      </g>
+      <!-- 眼睛 -->
+      <ellipse cx="87" cy="94" rx="5" ry="7" fill="#2e2a3a"/><ellipse cx="113" cy="94" rx="5" ry="7" fill="#2e2a3a"/>
+      <circle cx="89" cy="91" r="2" fill="#fff"/><circle cx="115" cy="91" r="2" fill="#fff"/>
+      <!-- 腮红 + 嘴 -->
+      <ellipse cx="74" cy="106" rx="7" ry="4" fill="#ffb3a7" opacity=".8"/>
+      <ellipse cx="126" cy="106" rx="7" ry="4" fill="#ffb3a7" opacity=".8"/>
+      <path d="M93 110 Q100 117 107 110" stroke="#8d5e4a" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <!-- 探险帽 -->
+      <path d="M58 60 Q100 24 142 60 Z" fill="#f2b434" stroke="#c8891c" stroke-width="3"/>
+      <path d="M50 60 Q100 68 150 60 Q100 76 50 60 Z" fill="#ffd25e" stroke="#c8891c" stroke-width="3"/>
+      <rect x="76" y="48" width="48" height="8" rx="4" fill="#c8891c"/>
+    </symbol>
+    <symbol id="ic-villain" viewBox="0 0 120 120">
+      <path d="M24 34 L14 8 L44 26 Z" fill="#7a4fd0" stroke="#fff" stroke-width="4" stroke-linejoin="round"/>
+      <path d="M96 34 L106 8 L76 26 Z" fill="#7a4fd0" stroke="#fff" stroke-width="4" stroke-linejoin="round"/>
+      <ellipse cx="60" cy="66" rx="46" ry="42" fill="#9a6cf0" stroke="#fff" stroke-width="4"/>
+      <path d="M18 84 Q30 74 40 84 Q50 74 60 84 Q70 74 80 84 Q90 74 102 84" fill="#7a4fd0" opacity=".7"/>
+      <ellipse cx="43" cy="58" rx="12" ry="14" fill="#fff"/><ellipse cx="77" cy="58" rx="12" ry="14" fill="#fff"/>
+      <circle cx="46" cy="61" r="6" fill="#2b2150"/><circle cx="74" cy="61" r="6" fill="#2b2150"/>
+      <path d="M48 86 Q60 78 72 86" stroke="#2b2150" stroke-width="4" fill="none" stroke-linecap="round"/>
+    </symbol>
+    <symbol id="ic-gem" viewBox="0 0 60 66">
+      <polygon points="30,2 56,17 56,48 30,64 4,48 4,17" fill="#6aa8ff" stroke="#fff" stroke-width="3"/>
+      <polygon points="30,2 56,17 30,30 4,17" fill="#a5d8ff"/>
+      <polygon points="30,30 56,17 56,48 30,64" fill="#4a7fe0"/>
+      <polygon points="30,30 4,17 4,48 30,64" fill="#7b6ce0"/>
+      <polygon points="30,2 30,30 4,17" fill="#d8ecff"/>
+    </symbol>
+    <symbol id="ic-medal" viewBox="0 0 160 160">
+      <path d="M40 8 L62 78 L20 78 Z" fill="#ef5d57"/><path d="M120 8 L140 78 L98 78 Z" fill="#4a90e2"/>
+      <circle cx="80" cy="102" r="52" fill="#ffcb4b" stroke="#e09a20" stroke-width="6"/>
+      <circle cx="80" cy="102" r="40" fill="#fff2c4" stroke="#e8b64a" stroke-width="4"/>
+      <text x="80" y="120" text-anchor="middle" font-size="46" font-weight="900" fill="#d98a1c" font-family="KaiTi,serif">★</text>
+    </symbol>
+    <symbol id="ic-grid" viewBox="0 0 100 100">
+      <rect x="2" y="2" width="96" height="96" fill="none" stroke="#e0a35a" stroke-width="2"/>
+      <path d="M50 2 V98 M2 50 H98 M2 2 L98 98 M98 2 L2 98" stroke="#e8bd85" stroke-width="1.2" stroke-dasharray="5 4"/>
+    </symbol>
+  </defs>
+</svg>
 
-  <div id="startScreen" class="start-screen">
-    <div style="font-size:60px;">🐑🌄</div>
-    <div style="font-size:22px;font-weight:600;color:#5e4b2b;">小羊上山识字大冒险</div>
-    <button class="big-btn" id="startBtn">开 始 冒 险</button>
-    <div style="font-size:15px;color:#8b7a4c;" id="modeHint">正在检测朗读引擎...</div>
-  </div>
+<div id="stars-bg"></div>
+<svg class="mtn" viewBox="0 0 1440 260" preserveAspectRatio="none" aria-hidden="true">
+  <path d="M0 190 L160 88 L280 168 L430 52 L580 178 L740 96 L900 186 L1060 70 L1210 172 L1330 108 L1440 180 L1440 260 L0 260Z" fill="#2f6b74" opacity=".55"/>
+  <path d="M0 226 L180 150 L340 214 L520 132 L700 222 L880 148 L1060 226 L1240 158 L1440 220 L1440 260 L0 260Z" fill="#1f5360" opacity=".7"/>
+</svg>
+<div class="cloud" style="top:14%;font-size:42px;animation-delay:0s">☁️</div>
+<div class="cloud" style="top:31%;font-size:28px;animation-delay:-9s">☁️</div>
+<div class="cloud" style="top:8%;font-size:32px;animation-delay:-17s">☁️</div>
 
-  <div id="mapScreen" class="screen hidden">
-    <div style="font-size:18px;font-weight:600;color:#5e4b2b;margin-bottom:5px;">🌄 选择关卡</div>
-    <div class="level-grid" id="levelGrid"></div>
-    <div class="mode-hint hidden" id="globalModeHint"></div>
-  </div>
+<div id="app">
+  <div class="frame">
+    <!-- 顶栏 -->
+    <div class="topbar">
+      <span class="logo-mark">🐑</span>
+      <div class="top-title">小羊上山<small>汉字山能量大冒险</small></div>
+      <div class="spacer"></div>
+      <div class="chip gold" id="gemChip">💎 0 / 60</div>
+      <div class="chip" id="starChip">⭐ 0</div>
+      <button class="icon-btn" id="muteBtn" title="音效开关">🔊</button>
+      <button class="icon-btn" id="dexBtn" title="汉字宝石图鉴">📖</button>
+      <button class="icon-btn" id="homeBtn" title="回到首页">🏠</button>
+    </div>
 
-  <div id="groupScreen" class="screen hidden">
-    <div id="groupTitle" style="font-size:22px;font-weight:700;color:#3e5e24;margin:5px 0;"></div>
-    <div class="group-grid" id="groupContainer"></div>
-    <button class="btn back" id="backToMapBtn">↩ 返回地图</button>
-  </div>
+    <!-- 首页 -->
+    <div class="screen on" id="scr-home">
+      <div class="home-wrap">
+        <div class="home-panel">
+          <div class="home-sub">汉 字 山 大 冒 险</div>
+          <div class="home-title">小羊上山</div>
+          <div class="home-scene">
+            <svg class="hero-sheep"><use href="#ic-sheep"/></svg>
+            <svg class="hero-villain"><use href="#ic-villain"/></svg>
+            <svg class="hero-gem" style="left:16%;top:26%"><use href="#ic-gem"/></svg>
+            <svg class="hero-gem" style="right:20%;top:8%;width:28px;animation-delay:-1.6s"><use href="#ic-gem"/></svg>
+            <div class="home-ground"></div>
+          </div>
+          <div class="home-btns">
+            <button class="btn" id="startBtn">🚩 开始冒险</button>
+            <button class="btn blue" id="dexHomeBtn">💎 我的宝石</button>
+          </div>
+          <div class="home-tip" id="homeTip">依据《小羊上山》第 1 级 60 字编排 · 建议家长陪玩</div>
+        </div>
+        <button class="btn ghost small" id="parentBtn" style="margin-top:12px">👨‍👩‍👦 给家长的话</button>
+      </div>
+    </div>
 
-  <div id="gameScreen" class="screen hidden">
-    <div id="gameLevelInfo" style="font-weight:600;color:#6b4f32;font-size:18px;"></div>
-    <div class="hint-text">🔊 先点小羊听听这个字怎么读</div>
-    <div class="audio-play-btn" id="playAudioBtn">🔊</div>
-    <div class="message-box" id="gameMessage"></div>
-    <div class="options-grid" id="optionsContainer"></div>
-    <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
-    <div class="retry-hint" id="retryHint"></div>
-    <button class="btn back hidden" id="finishGroupBtn" style="margin-top:10px;">🎉 完成本组</button>
-  </div>
+    <!-- 登山地图 -->
+    <div class="screen" id="scr-map">
+      <h2 class="big">🗺️ 汉字山登山地图</h2>
+      <p class="sub">点亮 60 颗汉字宝石，登上山顶宝库！点一个站点出发～</p>
+      <div class="map-wrap" id="mapWrap">
+        <svg class="map-path" viewBox="0 0 800 460" preserveAspectRatio="none">
+          <path d="M70 400 Q150 330 230 370 T400 300 Q480 250 560 290 Q640 330 720 210 Q760 150 720 70"
+                fill="none" stroke="#e6b34c" stroke-width="12" stroke-linecap="round" stroke-dasharray="2 26" opacity=".85"/>
+        </svg>
+      </div>
+    </div>
 
-  <div id="quizScreen" class="screen hidden">
-    <div style="font-size:24px;font-weight:700;color:#b45f06;">🏆 关卡小测验</div>
-    <div class="hint-text">🔊 听听看，是哪个字？</div>
-    <div class="audio-play-btn" id="quizPlayBtn">🔊</div>
-    <div class="message-box" id="quizMessage"></div>
-    <div class="options-grid" id="quizOptionsContainer"></div>
-    <button class="btn back hidden" id="quizCompleteBtn" style="margin-top:15px;">🎊 测验完成</button>
+    <!-- 剧情 -->
+    <div class="screen" id="scr-story">
+      <h2 class="big" id="storyTitle">第 1 站 · 起跑坡</h2>
+      <div class="story-box" style="margin-top:auto">
+        <svg width="130" height="130" style="flex:0 0 130px"><use href="#ic-sheep"/></svg>
+        <div>
+          <div class="speech" id="storySpeech"></div>
+          <div class="story-villain" id="storyVillain"></div>
+        </div>
+        <svg width="86" height="86" style="flex:0 0 86px"><use href="#ic-villain"/></svg>
+      </div>
+      <div class="mission" id="storyMission"></div>
+      <button class="btn green" id="storyGo" style="margin-bottom:auto">🚩 出发！</button>
+    </div>
+
+    <!-- 认字 -->
+    <div class="screen" id="scr-learn">
+      <div class="game-head">
+        <div class="game-title" id="learnTitle">认一认</div>
+        <div class="hint" id="learnHint">看图 → 听音 → 描一描</div>
+      </div>
+      <div class="progress-dots" id="learnDots"></div>
+      <div class="learn-wrap">
+        <div class="learn-main">
+          <div class="char-card" id="charCard">
+            <svg class="grid-bg"><use href="#ic-grid"/></svg>
+            <div class="speaker">🔊</div>
+            <div class="big-char" id="bigChar">山</div>
+            <div class="char-pinyin" id="charPinyin">点一下，听小羊读</div>
+          </div>
+          <div class="side-card">
+            <div class="pic-card">
+              <div class="pic-emoji" id="picEmoji">🏔️</div>
+              <div class="pic-hint" id="picHint"></div>
+            </div>
+            <div class="word-card">
+              <div class="word-label">找朋友 · 组个词（点一下听）</div>
+              <div class="word-list" id="wordList"></div>
+            </div>
+            <div class="trace-card">
+              <div class="trace-tip" id="traceTip">✏️ 用手指在格子里描一描</div>
+              <div class="trace-wrap" id="traceWrap">
+                <div class="trace-char" id="traceChar">山</div>
+                <canvas id="traceCanvas" width="300" height="300"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="row" style="margin-top:6px">
+          <button class="btn ghost small" id="learnBack">↩ 再听一遍</button>
+          <button class="btn blue" id="learnNext">下一个字 →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 小游戏 -->
+    <div class="screen" id="scr-game">
+      <div class="game-head">
+        <div class="game-title" id="gameTitle">抢汉字宝石</div>
+        <div class="combo" id="comboChip">🔥 连击 ×0</div>
+      </div>
+      <div class="progress-dots" id="gameDots"></div>
+      <p class="sub" id="gameTip"></p>
+      <div id="gameArea" style="width:100%;flex:1;display:flex;flex-direction:column;justify-content:center"></div>
+      <div class="msg" id="gameMsg"></div>
+    </div>
+
+    <!-- 绘本阅读 -->
+    <div class="screen" id="scr-read">
+      <h2 class="big" id="readTitle">📖 我自己读</h2>
+      <p class="sub">点每个字能听发音 · 点一整句听小羊读一遍</p>
+      <div class="book">
+        <div class="book-title" id="bookTitle"></div>
+        <div class="book-lines" id="bookLines"></div>
+        <div class="book-foot" id="bookFoot">✨ 这些字你都认识啦，自己读一遍吧！</div>
+      </div>
+      <button class="btn green" id="readDone" style="margin-top:12px">🏅 我读完啦！</button>
+    </div>
+
+    <!-- 结算 -->
+    <div class="screen" id="scr-award">
+      <div class="award-wrap">
+        <svg class="medal"><use href="#ic-medal"/></svg>
+        <div class="award-title" id="awardTitle">太厉害啦！</div>
+        <div class="award-row" id="awardGems"></div>
+        <canvas id="certCanvas" width="1000" height="660"></canvas>
+        <div class="row" style="margin-top:6px">
+          <button class="btn ghost small" id="certDown">⬇️ 保存奖状</button>
+          <button class="btn" id="awardNext">下一站 →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 图鉴 -->
+    <div class="screen" id="scr-dex">
+      <h2 class="big">💎 汉字宝石图鉴</h2>
+      <p class="sub" id="dexSub">点亮的宝石可以点一下听发音</p>
+      <div class="dex-grid" id="dexGrid"></div>
+      <div class="row" style="margin-top:12px">
+        <button class="btn ghost small" id="dexBack">↩ 返回</button>
+        <button class="btn ghost small" id="resetBtn">🔄 重新开始</button>
+      </div>
+    </div>
+
+    <!-- 家长说明 -->
+    <div class="screen" id="scr-parent">
+      <h2 class="big">👨‍👩‍👦 给家长的话</h2>
+      <div class="parent-note" id="parentNote"></div>
+      <button class="btn ghost" id="parentBack" style="margin-top:16px">↩ 返回</button>
+    </div>
   </div>
 </div>
+<div id="testOut" style="display:none"></div>
+<script>/* =====================================================================
+   小羊上山 · 汉字山能量大冒险  —— 教材数据
+   严格对齐《小羊上山儿童汉语分级读物》第 1 级：
+   · 60 个核心字，按 10 册编排，每册 6 个新字
+   · 词语、绘本短句只使用「本册及之前已学」的字（教材的编写铁律）
+   · 句式重复、有节奏，孩子认完 6 个字就能自己读完一页
+   ===================================================================== */
 
-<script>
-  (function() {
-    // ---------- 字库 ----------
-    const LEVELS = [
-      { name: "青草坡", emoji: "🌱", words: ["一","二","三","四","五","六","七","八","九","十","两","只","头","又","了","不","大","小","上","下","多","少","白","天","云","山","太","阳","月","亮","星","马","牛","羊","兔","虫","鸟","花","草","树","地","吃","看","走","笑","来","飞","爱","是","跑","跳","高","兴","快","乐","好","的","爸","妈","我"] },
-      { name: "小树林", emoji: "🌿", words: ["水","火","木","金","土","左","右","中","年","口","目","耳","手","足","心","子","女","王","田","百","千","万","黑","红","蓝","绿","黄","高","矮","长","短","圆","方","正","生","死","喜","怒","哀","惧","恨","静","动","开","关","进","出","站","坐","听","说","读","写","学","哥","姐","弟","妹","男","老","姓","名","叔","婶","爷","奶","英","国","美","韩","德","法","俄","印","非","欧","澳","洲","亚"] },
-      { name: "星星谷", emoji: "⭐", words: ["石","沙","风","雨","雪","春","夏","秋","冬","冷","暖","热","凉","河","海","湖","江","田","园","林","路","门","窗","桌","椅","床","灯","衣","帽","鞋","袜","米","面","饭","菜","肉","蛋","奶","果","瓜","叶","根","茎","种","芽","苗","禾","森","林","草","花","树","叶","虫","鸟","鱼","虾","贝","壳"] },
-      { name: "彩虹桥", emoji: "🌈", words: ["声","音","歌","唱","画","写","字","句","诗","书","本","笔","纸","尺","刀","剪","贴","粘","折","撕","拉","推","抱","捧","拿","放","送","给","买","卖","钱","元","角","分","钟","表","时","间","早","晚","今","明","昨","前","后","里","外","旁","边","对","错","真","假","美","丑","新","旧"] },
-      { name: "白云顶", emoji: "☁️", words: ["知","道","想","思","念","记","忘","懂","会","能","可","以","因","为","所","但","如","果","虽","然","比","较","更","最","很","太","非","常","都","全","就","才","还","也","又","再","每","各","别","其","他","什","么","怎","样","这","那","哪","谁","几","多","少","次","回","遍","些","点","块","条","只","头","朵","颗","棵","座","间","辆","艘","吧"] },
-      { name: "太阳城堡", emoji: "☀️", words: ["教","育","培","养","保","护","帮","助","关","心","照","顾","学","习","练","复","预","检","查","测","验","考","试","合","格","优","秀","进","步","努","力","认","识","阅","读","理","解","表","达","沟","通","交","流","分","享","作","团","队","朋","友","伙","伴","同","老","师","校","园","室","操","场","图","书","馆","实","验","手","工","绘","画"] }
-    ];
+/* 60 字图解：e = 图形提示，h = 儿童口吻的字形/字义提示，
+   w = 字卡背面的词，x = 是否适合做「图画变汉字」的象形演示 */
+const CHARS = {
+  '一': {e:'☝️', h:'伸出一根手指，就是「一」', w:['一二三','一上一下'], x:1},
+  '二': {e:'✌️', h:'两根手指，两横就是「二」', w:['一二三'], x:1},
+  '三': {e:'🖐️', h:'三根手指，三横就是「三」', w:['一二三'], x:1},
+  '四': {e:'4️⃣', h:'数到第四，就是「四」', w:['四五六'], x:0},
+  '五': {e:'🖐️', h:'一只手五根手指，就是「五」', w:['四五六'], x:0},
+  '六': {e:'6️⃣', h:'数到第六，就是「六」', w:['四五六'], x:0},
+  '七': {e:'7️⃣', h:'数到第七，就是「七」', w:['七八九'], x:0},
+  '八': {e:'8️⃣', h:'数到第八，就是「八」', w:['七八九'], x:0},
+  '九': {e:'9️⃣', h:'数到第九，就是「九」', w:['七八九'], x:0},
+  '十': {e:'🔟', h:'一横一竖，数满就是「十」', w:['十只','七八九十'], x:1},
+  '两': {e:'✌️', h:'两个、两只，就是「两」', w:['两只','两头'], x:0},
+  '只': {e:'🐦', h:'数小动物要说「一只」', w:['两只','十只'], x:0},
+  '头': {e:'🐮', h:'数大动物要说「一头」，也指脑袋', w:['一头','头上'], x:1},
+  '又': {e:'🔁', h:'再来一次、还要一个，就是「又」', w:['又大又小','又笑又跳'], x:0},
+  '了': {e:'✅', h:'事情做完啦，就加个「了」', w:['上山了','来了'], x:0},
+  '不': {e:'🙅', h:'摇摇头说不要，就是「不」', w:['不是','不大不小'], x:0},
+  '大': {e:'💪', h:'张开双手双脚，好大好有力气！', w:['大小','大山','大树'], x:1},
+  '小': {e:'🐣', h:'小小的一点，就是「小」', w:['大小','小鸟','小草'], x:1},
+  '上': {e:'⬆️', h:'往高处走，就是「上」', w:['上山','上山了','山上'], x:1},
+  '下': {e:'⬇️', h:'往低处走，就是「下」', w:['下山','山下'], x:1},
+  '多': {e:'🍬', h:'好多好多糖，数也数不完', w:['多少','不多'], x:0},
+  '少': {e:'🍭', h:'只剩一点点，就是「少」', w:['多少','不少'], x:0},
+  '白': {e:'☁️', h:'白云、白天，白白的', w:['白云','白天'], x:0},
+  '天': {e:'🌤️', h:'头顶上高高的一片，就是「天」', w:['白天','天上'], x:1},
+  '云': {e:'☁️', h:'天上一朵软软的云', w:['白云','云上'], x:1},
+  '山': {e:'🏔️', h:'三座尖尖的山峰，慢慢变成「山」', w:['上山','大山','山上'], x:1},
+  '太': {e:'☀️', h:'太阳的「太」，最大最大啦', w:['太阳'], x:0},
+  '阳': {e:'🌞', h:'太阳的「阳」，暖洋洋', w:['太阳'], x:0},
+  '月': {e:'🌙', h:'弯弯的月牙，变成「月」', w:['月亮'], x:1},
+  '亮': {e:'💡', h:'灯一亮，到处亮堂堂', w:['月亮','亮亮'], x:0},
+  '星': {e:'⭐', h:'天上眨眼睛的小星星', w:['星星'], x:1},
+  '马': {e:'🐴', h:'大马跑得快，鬃毛飘呀飘', w:['大马','马上'], x:1},
+  '牛': {e:'🐮', h:'头上有两只角，就是「牛」', w:['小牛','一头大牛'], x:1},
+  '羊': {e:'🐑', h:'小羊头上弯弯角，咩咩叫', w:['小羊','山羊'], x:1},
+  '兔': {e:'🐰', h:'长耳朵短尾巴，是小兔', w:['小兔','白兔'], x:0},
+  '虫': {e:'🐛', h:'小小的毛毛虫，一扭一扭', w:['小虫','七只小虫'], x:1},
+  '鸟': {e:'🐦', h:'有翅膀会飞，就是「鸟」', w:['小鸟','飞鸟'], x:1},
+  '花': {e:'🌸', h:'草地上开出一朵花', w:['花草','小花','山上花'], x:1},
+  '草': {e:'🌱', h:'绿绿的小草从地里冒出来', w:['小草','吃草','花草'], x:1},
+  '树': {e:'🌳', h:'高高的大树，有树干有树叶', w:['大树','树上'], x:1},
+  '地': {e:'🌍', h:'脚下的大地，土地的地', w:['地上','大地','草地'], x:0},
+  '吃': {e:'🍚', h:'张口吃东西，就是「吃」', w:['吃草','好吃'], x:0},
+  '看': {e:'👀', h:'手搭在眼睛上往远处看', w:['看花','看山','看看'], x:1},
+  '走': {e:'🚶', h:'一步一步往前走', w:['走来','走走','飞走'], x:1},
+  '笑': {e:'😄', h:'弯弯的眼睛，哈哈大笑', w:['大笑','好笑','又笑又跳'], x:1},
+  '来': {e:'👉', h:'朝我这边过来，就是「来」', w:['来了','走来','飞来'], x:0},
+  '飞': {e:'🕊️', h:'张开翅膀飞上天', w:['飞鸟','飞来','飞走'], x:1},
+  '爱': {e:'❤️', h:'心里喜欢，就是「爱」', w:['爱我','我爱'], x:0},
+  '是': {e:'✔️', h:'点点头说「是」', w:['不是','是花'], x:0},
+  '跑': {e:'🏃', h:'两条腿飞快地跑', w:['跑来','快跑'], x:1},
+  '跳': {e:'🐸', h:'像小青蛙一样，双脚一蹬蹦起来！', w:['跳高','又笑又跳'], x:1},
+  '高': {e:'📏', h:'长颈鹿好高好高', w:['高兴','跳高','高大'], x:0},
+  '兴': {e:'🎉', h:'高高兴兴，开心得跳起来', w:['高兴','高高兴兴'], x:0},
+  '快': {e:'⚡', h:'咻——像闪电一样，好快！', w:['快跑','快快乐乐'], x:0},
+  '乐': {e:'🎈', h:'快乐得想唱歌', w:['快乐','快快乐乐'], x:0},
+  '好': {e:'👍', h:'做得真棒，就是一个「好」', w:['好的','好大','好笑'], x:0},
+  '的': {e:'🔗', h:'我的、你的，把两个字连起来', w:['我的','好的','大大的'], x:0},
+  '爸': {e:'👨', h:'家里高高的那个人是爸爸', w:['爸爸'], x:0},
+  '妈': {e:'👩', h:'抱抱我的人是妈妈', w:['妈妈'], x:0},
+  '我': {e:'🙋', h:'指指自己，就是「我」', w:['我的','我爱','我笑'], x:0},
+};
 
-    const allChars = new Set(LEVELS.flatMap(l => l.words));
+/* 10 册 = 10 个冒险站点。story 里的每个字都必须在「本册及之前」的字表里 */
+const BOOKS = [
+  {
+    book:'《一二三，上山》', zone:'起跑坡', emo:'🌱', color:'#69c98a',
+    villain:'迷雾怪偷走了第一把汉字钥匙！',
+    chars:['一','二','三','上','下','山','的'],
+    story:['一二三，上山。','一二三，下山。','上山，下山，山上山下。'],
+    badge:'登山小勇士'
+  },
+  {
+    book:'《小小的，大大的》', zone:'巨石阵', emo:'🗿', color:'#e8a257',
+    villain:'巨石怪把字宝宝变成大石头啦！',
+    chars:['大','小','多','少','草','树'],
+    story:['小草小小的，大树大大的。','大树小小的，大山大大的。','大山大大的，小草小小的。','多少小草，多少大树。'],
+    badge:'大小观察家'
+  },
+  {
+    book:'《月亮和星星》', zone:'星夜崖', emo:'🌙', color:'#7b8ee0',
+    villain:'夜空里的星星被乌云盖住了。',
+    chars:['天','白','云','月','亮','星'],
+    story:['白白的云，亮亮的星。','天上白云，天上月亮。','月亮亮，星星亮。','天上大大小小的星。'],
+    badge:'摘星小能手'
+  },
+  {
+    book:'《太阳上山了》', zone:'火焰山', emo:'🌋', color:'#f2784f',
+    villain:'火焰山太热，字宝宝躲起来了！',
+    chars:['太','阳','十','不','了','是'],
+    story:['太阳上山了。','大树小小的，太阳大大的。','天上不是白云，是太阳。','一，二，三……十！'],
+    badge:'太阳小队长'
+  },
+  {
+    book:'《小羊和小牛》', zone:'恐龙谷', emo:'🦕', color:'#8cbf5a',
+    villain:'恐龙谷里的小动物找不到自己的名字了。',
+    chars:['马','牛','羊','兔','虫','鸟'],
+    story:['小羊上山，小牛上山。','小兔，小兔，上山。','小鸟上山，小虫上山。','山上小羊，山下小牛。'],
+    badge:'动物好朋友'
+  },
+  {
+    book:'《两只小兔》', zone:'花田桥', emo:'🌸', color:'#e085ad',
+    villain:'花田桥断啦，要用汉字宝石搭起来！',
+    chars:['两','只','头','花','地','又'],
+    story:['两只小兔，两只小鸟。','一头大牛，一头大马。','山上花，地上草。','又上又下，又大又小。','花是花，草是草。'],
+    badge:'搭桥工程师'
+  },
+  {
+    book:'《来来来，上山来》', zone:'飞毛腿峡谷', emo:'🚀', color:'#4bb6c4',
+    villain:'风怪把动作字吹得东倒西歪。',
+    chars:['吃','看','走','来','飞','跑'],
+    story:['小鸟飞，大马跑，小虫走。','来来来，上山来。','小羊来，小牛来。','看！小鸟飞来了。','小牛吃草，小羊吃草。'],
+    badge:'飞毛腿小羊'
+  },
+  {
+    book:'《高高兴兴》', zone:'弹力跳跳岩', emo:'🤸', color:'#a97bd6',
+    villain:'跳跳岩上的开心字被弹飞了。',
+    chars:['跳','笑','爱','高','兴','快','乐'],
+    story:['小兔又笑又跳。','高高兴兴上山来。','快快跑，快快跳。','小羊爱小草，小牛爱小草。','大大小小，快快乐乐。'],
+    badge:'开心弹簧王'
+  },
+  {
+    book:'《我爱爸爸妈妈》', zone:'家城堡', emo:'🏰', color:'#f0a45c',
+    villain:'城堡大门要用「家」的字才能打开。',
+    chars:['好','爸','妈','我'],
+    story:['我的爸爸，我的妈妈。','爸爸爱我，妈妈爱我。','我爱爸爸，我爱妈妈。','我高高兴兴，快快乐乐。'],
+    badge:'暖心小当家'
+  },
+  {
+    book:'《一二三……十》', zone:'山顶宝库', emo:'👑', color:'#e7b542',
+    villain:'最后一战！把 60 颗汉字宝石全部点亮！',
+    chars:['四','五','六','七','八','九'],
+    story:['一二三，四五六，七八九十。','四只小羊，五只小兔，六只小鸟。','七只小虫，八只大马，九只小牛，十只小羊。','十只小羊上山来！'],
+    badge:'汉字山之王'
+  },
+];
 
-    // 组词库（用于发音）
-    const rawWordGroups = {
-      "一": ["一个","一天","一起"], "二": ["二月","二手"], "三": ["三月","三星"], "四": ["四月","四方"], "五": ["五月","五星"], "六": ["六月","六角"], "七": ["七月","七夕"], "八": ["八月","八方"], "九": ["九月","九天"], "十": ["十月","十分"], "两": ["两个","两天"], "只": ["一只","只要"], "头": ["木头","石头"], "又": ["又大","又来"], "了": ["来了","好了"], "不": ["不是","不好"], "大": ["大人","大山","大小"], "小": ["小鸟","大小","小学"], "上": ["上学","上面"], "下": ["下面","下山"], "多": ["多少","好多"], "少": ["多少","少女"], "白": ["白天","白云"], "天": ["白天","天空"], "云": ["白云","云朵"], "山": ["上山","大山"], "太": ["太阳","太太"], "阳": ["太阳","阳光"], "月": ["月亮","五月"], "亮": ["月亮","闪亮"], "星": ["星星","星光"], "马": ["马上","木马"], "牛": ["水牛","牛奶"], "羊": ["山羊","小羊"], "兔": ["兔子","白兔"], "虫": ["虫子","小虫"], "鸟": ["小鸟","飞鸟"], "花": ["花草","小花"], "草": ["小草","草地"], "树": ["大树","树叶"], "地": ["地上","大地"], "吃": ["吃鱼","吃饭"], "看": ["看见","看书"], "走": ["走开","飞走"], "笑": ["笑话","笑声"], "来": ["上来","下来"], "飞": ["飞走","飞鸟"], "爱": ["爱人","可爱"], "是": ["可是","就是"], "跑": ["跑马","飞跑"], "跳": ["跳高","跳远"], "高": ["高大","高兴"], "兴": ["高兴","兴奋"], "快": ["飞快","快乐"], "乐": ["快乐","音乐"], "好": ["好人","你好"], "的": ["我的","你的"], "爸": ["爸爸"], "妈": ["妈妈"], "我": ["我们","我的"],
-      "水": ["水果","河水"], "火": ["火车","大火"], "木": ["木头","木马"], "金": ["金子","金色"], "土": ["土地","泥土"], "左": ["左右","左手"], "右": ["右手","右边"], "中": ["中心","中间"], "年": ["今年","新年"], "口": ["门口","口水"], "目": ["目光","节目"], "耳": ["耳朵","木耳"], "手": ["小手","手上"], "足": ["足球","十足"], "心": ["爱心","开心"], "子": ["子女","孩子"], "女": ["女儿","女生"], "王": ["国王","王子"], "田": ["水田","田地"], "百": ["一百","百万"], "千": ["一千","秋千"], "万": ["一万","千万"], "黑": ["黑色","天黑"], "红": ["红色","红日"], "蓝": ["蓝天","蓝色"], "绿": ["绿色","绿叶"], "黄": ["黄色","黄金"], "矮": ["矮小","高矮"], "长": ["长大","很长"], "短": ["短跑","长短"], "圆": ["圆月","方圆"], "方": ["方向","地方"], "正": ["正在","真正"], "生": ["生日","花生"], "死": ["生死","死心"], "喜": ["喜欢","喜事"], "怒": ["发怒","怒火"], "哀": ["悲哀","哀乐"], "惧": ["惧怕","不惧"], "恨": ["可恨","仇恨"], "静": ["安静","平静"], "动": ["动物","开动"], "开": ["开心","开门"], "关": ["关门","关心"], "进": ["进入","进来"], "出": ["出去","出来"], "站": ["车站","站立"], "坐": ["请坐","坐下"], "听": ["听说","听见"], "说": ["说话","小说"], "读": ["读书","阅读"], "写": ["写字","书写"], "学": ["学习","学校"], "哥": ["哥哥","大哥"], "姐": ["姐姐","大姐"], "弟": ["弟弟","兄弟"], "妹": ["妹妹","姐妹"], "男": ["男人","男生"], "老": ["老师","老人"], "姓": ["姓名","姓氏"], "名": ["名字","出名"], "叔": ["叔叔","大叔"], "婶": ["大婶","婶婶"], "爷": ["爷爷","老爷"], "奶": ["奶奶","牛奶"], "英": ["英国","英雄"], "国": ["中国","国家"], "美": ["美国","美丽"], "韩": ["韩国"], "德": ["德国","品德"], "法": ["法国","方法"], "俄": ["俄国"], "印": ["印度","打印"], "非": ["非常","非洲"], "欧": ["欧洲","欧美"], "澳": ["澳洲","澳门"], "洲": ["亚洲","非洲"], "亚": ["亚洲"],
-      "石": ["石头","石门"], "沙": ["沙子","沙土"], "风": ["大风","风沙"], "雨": ["下雨","雨天"], "雪": ["下雪","白雪"], "春": ["春天","春风"], "夏": ["夏天","夏季"], "秋": ["秋天","秋风"], "冬": ["冬天","冬季"], "冷": ["冷水","寒冷"], "暖": ["暖和","温暖"], "热": ["热爱","热水"], "凉": ["凉快","凉水"], "河": ["河水","河流"], "海": ["大海","海水"], "湖": ["湖水","西湖"], "江": ["长江","江水"], "园": ["花园","公园"], "林": ["树林","森林"], "路": ["马路","路上"], "门": ["大门","门口"], "窗": ["窗户","门窗"], "桌": ["桌子","书桌"], "椅": ["椅子","木椅"], "床": ["床上","木床"], "灯": ["灯光","台灯"], "衣": ["衣服","上衣"], "帽": ["帽子","草帽"], "鞋": ["鞋子","皮鞋"], "袜": ["袜子","鞋袜"], "米": ["大米","米饭"], "面": ["面包","见面"], "饭": ["吃饭","米饭"], "菜": ["白菜","青菜"], "肉": ["牛肉","鸡肉"], "蛋": ["鸡蛋","蛋糕"], "果": ["水果","苹果"], "瓜": ["西瓜","瓜子"], "叶": ["树叶","叶子"], "根": ["树根","耳根"], "茎": ["花茎","根茎"], "种": ["种子","种花"], "芽": ["发芽","豆芽"], "苗": ["禾苗","树苗"], "禾": ["禾苗"], "森": ["森林"], "虾": ["小虾","鱼虾"], "贝": ["贝壳","宝贝"], "壳": ["贝壳","蛋壳"],
-      "声": ["声音","笑声"], "音": ["声音","音乐"], "歌": ["唱歌","儿歌"], "唱": ["唱歌","合唱"], "画": ["画画","图画"], "字": ["写字","汉字"], "句": ["句子","一句话"], "诗": ["古诗","诗歌"], "书": ["看书","书本"], "本": ["书本","本子"], "笔": ["毛笔","铅笔"], "纸": ["纸张","白纸"], "尺": ["尺寸","尺子"], "刀": ["小刀","刀子"], "剪": ["剪刀","剪纸"], "贴": ["贴画","贴纸"], "粘": ["粘贴"], "折": ["折纸","打折"], "撕": ["撕开","撕纸"], "拉": ["拉开","拉手"], "推": ["推门","推开"], "抱": ["拥抱","抱住"], "捧": ["捧花","捧着"], "拿": ["拿来","拿走"], "放": ["放开","放下"], "送": ["送给","送来"], "给": ["送给","给你"], "买": ["买书","买菜"], "卖": ["卖花","卖出"], "钱": ["金钱","花钱"], "元": ["一元","元月"], "角": ["一角","三角"], "分": ["分开","十分"], "钟": ["时钟","分钟"], "表": ["手表","钟表"], "时": ["时间","小时"], "间": ["时间","房间"], "早": ["早上","早安"], "晚": ["晚上","晚安"], "今": ["今天","今后"], "明": ["明天","明亮"], "昨": ["昨天"], "前": ["前面","前天"], "后": ["后面","后天"], "里": ["里面","家里"], "外": ["外面","外国"], "旁": ["旁边","两旁"], "边": ["旁边","左边"], "对": ["对不起","对面"], "错": ["错误","不错"], "真": ["真实","天真"], "假": ["假装","真假"], "丑": ["丑小鸭","小丑"], "新": ["新年","新书"], "旧": ["新旧","破旧"],
-      "知": ["知道","知识"], "道": ["知道","道路"], "想": ["想法","想念"], "思": ["思想","思念"], "念": ["想念","念书"], "记": ["记住","日记"], "忘": ["忘记","难忘"], "懂": ["懂事","听懂"], "会": ["开会","学会"], "能": ["不能","能够"], "可": ["可以","可爱"], "以": ["可以","以后"], "因": ["因为","原因"], "为": ["因为","为了"], "所": ["所以","所有"], "但": ["但是","不但"], "如": ["如果","比如"], "虽": ["虽然"], "然": ["虽然","然后"], "比": ["比较","比如"], "较": ["比较"], "更": ["更加","更好"], "最": ["最好","最大"], "很": ["很好","很大"], "常": ["非常","常常"], "都": ["都是","全都"], "全": ["全部","安全"], "就": ["就是","成就"], "才": ["人才","才能"], "还": ["还是","还有"], "也": ["也是","也许"], "再": ["再见","再次"], "每": ["每天","每个"], "各": ["各种","各位"], "别": ["别人","分别"], "其": ["其中","其他"], "他": ["他们","其他"], "什": ["什么"], "么": ["什么","怎么"], "怎": ["怎么","怎样"], "样": ["怎样","样子"], "这": ["这个","这里"], "那": ["那个","那里"], "哪": ["哪里","哪个"], "谁": ["谁的","谁家"], "几": ["几个","几天"], "次": ["几次","每次"], "回": ["回去","回来"], "遍": ["一遍","几遍"], "些": ["一些","这些"], "点": ["一点","点心"], "块": ["一块","方块"], "条": ["一条","面条"], "朵": ["花朵","云朵"], "颗": ["一颗","颗粒"], "棵": ["一棵"], "座": ["一座","座位"], "辆": ["一辆","车辆"], "艘": ["一艘"], "吧": ["好吧"],
-      "教": ["教师","教育"], "育": ["教育","体育"], "培": ["培养"], "养": ["培养","养育"], "保": ["保护","保卫"], "护": ["保护","爱护"], "帮": ["帮助","帮忙"], "助": ["帮助","助手"], "照": ["照顾","照片"], "顾": ["照顾","顾客"], "习": ["学习","练习"], "练": ["练习","训练"], "复": ["复习","反复"], "预": ["预习","预先"], "检": ["检查","体检"], "查": ["检查","查看"], "测": ["测试","检测"], "验": ["实验","考验"], "考": ["考试","思考"], "试": ["考试","尝试"], "合": ["合作","合格"], "格": ["合格","格外"], "优": ["优秀","优点"], "秀": ["优秀","秀丽"], "步": ["进步","跑步"], "努": ["努力"], "力": ["努力","力气"], "认": ["认识","认真"], "识": ["认识","识字"], "阅": ["阅读","阅览"], "理": ["理解","道理"], "解": ["理解","解决"], "达": ["到达","表达"], "沟": ["沟通","水沟"], "通": ["交通","通过"], "交": ["交通","交流"], "流": ["交流","河流"], "享": ["分享","享受"], "作": ["工作","作业"], "团": ["团结","团体"], "队": ["团队","队长"], "朋": ["朋友"], "友": ["朋友","友好"], "伙": ["伙伴","伙计"], "伴": ["伙伴","同伴"], "同": ["同学","相同"], "师": ["老师","教师"], "校": ["学校","校园"], "室": ["教室","室内"], "操": ["操场","操作"], "场": ["操场","广场"], "图": ["图书","图画"], "馆": ["图书馆","饭馆"], "实": ["实验","真实"], "工": ["手工","工人"], "绘": ["绘画","绘制"]
+/* 5 种小游戏。每册玩 2 个，按册号轮换，最后一册是总复习 */
+const GAMES = {
+  gem:    {name:'抢汉字宝石', emo:'💎', tip:'听一听，点走会发光的那个字！'},
+  whack:  {name:'敲跑迷雾怪', emo:'🔨', tip:'听到哪个字，就敲哪只小怪兽！'},
+  missing:{name:'谁不见了', emo:'👀', tip:'记住这些字，看看谁偷偷跑掉了！'},
+  match:  {name:'汉字对对碰', emo:'🃏', tip:'把汉字和它的图画配成一对！'},
+  build:  {name:'词语拼拼乐', emo:'🀄', tip:'把两个字拼成一个词！'},
+};
+const GAME_ORDER = ['gem','whack','missing','match','build'];
+
+/* 每个册子要玩的两种游戏（轮换保证不重复到腻） */
+function gamesForBook(i) {
+  const a = GAME_ORDER[i % GAME_ORDER.length];
+  const b = GAME_ORDER[(i + 2) % GAME_ORDER.length];
+  return i === 9 ? ['gem', 'match'] : [a, b === a ? 'gem' : b];
+}
+
+/* 常用词库：只由 60 字组成，用于「词语拼拼乐」和复习 */
+const WORDS = [
+  '上山','下山','山上','山下','大小','多少','小草','大树','白天','白云',
+  '天上','太阳','月亮','星星','小羊','小牛','大马','小兔','小鸟','小虫',
+  '花草','地上','来了','飞来','飞走','走来','跑来','吃草','看花','大笑',
+  '跳高','高兴','快乐','爸爸','妈妈','我的','好的','山花','上山了','大大的',
+];
+
+/* 徽章颜色（奖状用） */
+const BADGE_COLORS = ['#69c98a','#e8a257','#7b8ee0','#f2784f','#8cbf5a',
+                      '#e085ad','#4bb6c4','#a97bd6','#f0a45c','#e7b542'];
+
+
+/* =====================================================================
+   小羊上山 · 汉字山能量大冒险  —— 核心
+   ===================================================================== */
+const $ = id => document.getElementById(id);
+const delay = ms => new Promise(r => setTimeout(r, ms));
+const rnd = n => Math.floor(Math.random() * n);
+const pick = a => a[rnd(a.length)];
+const shuffle = a => { const b = a.slice(); for (let i = b.length - 1; i > 0; i--) { const j = rnd(i + 1); [b[i], b[j]] = [b[j], b[i]]; } return b; };
+const uniq = a => [...new Set(a)];
+
+/* ---------------- 存档 ---------------- */
+const KEY = 'goat_hill_v2';
+const DEFAULT = {unlocked: 0, done: [], gems: [], stars: 0, mute: false, best: 0};
+let S;
+function loadSave() {
+  try {
+    const o = JSON.parse(localStorage.getItem(KEY) || 'null');
+    if (o && typeof o === 'object') return {...DEFAULT, ...o, done: o.done || [], gems: o.gems || []};
+  } catch (e) {}
+  return {...DEFAULT, done: [], gems: []};
+}
+function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
+S = loadSave();
+
+/* ---------------- 音频（必须用户手势内解锁，否则整局静音） ---------------- */
+let AC = null;
+function ensureAudio() {
+  try {
+    if (!AC) AC = new (window.AudioContext || window.webkitAudioContext)();
+    if (AC.state === 'suspended') AC.resume().catch(() => {});
+    return AC;
+  } catch (e) { return null; }
+}
+function unlockAudio() {
+  const ac = ensureAudio(); if (!ac) return;
+  try {
+    const o = ac.createOscillator(), g = ac.createGain();
+    g.gain.value = 0.00001; o.connect(g); g.connect(ac.destination);
+    o.start(); o.stop(ac.currentTime + 0.02);
+  } catch (e) {}
+}
+['pointerdown', 'mousedown', 'touchstart', 'keydown', 'click'].forEach(ev =>
+  document.addEventListener(ev, unlockAudio, {capture: true, passive: true}));
+
+function tone(freq, dur = .12, type = 'sine', vol = .13, delayS = 0) {
+  if (S.mute) return;
+  const ac = ensureAudio(); if (!ac) return;
+  try {
+    const t0 = ac.currentTime + delayS;
+    const o = ac.createOscillator(), g = ac.createGain();
+    o.type = type; o.frequency.setValueAtTime(freq, t0);
+    g.gain.setValueAtTime(0, t0);
+    g.gain.linearRampToValueAtTime(vol, t0 + .012);
+    g.gain.exponentialRampToValueAtTime(.0001, t0 + dur);
+    o.connect(g); g.connect(ac.destination); o.start(t0); o.stop(t0 + dur + .02);
+  } catch (e) {}
+}
+const SFX = {
+  tap:    () => tone(620, .07, 'triangle', .09),
+  page:   () => { tone(520, .08, 'sine', .1); tone(780, .1, 'sine', .09, .07); },
+  right:  () => { tone(660, .12, 'sine', .14); tone(880, .14, 'sine', .13, .1); tone(1175, .2, 'sine', .12, .2); },
+  wrong:  () => { tone(200, .18, 'triangle', .11); tone(150, .22, 'triangle', .09, .1); },
+  gem:    () => { [880, 1175, 1568].forEach((f, i) => tone(f, .16, 'triangle', .12, i * .07)); },
+  combo:  () => { [784, 988, 1318].forEach((f, i) => tone(f, .1, 'square', .07, i * .06)); },
+  win:    () => { [523, 659, 784, 1047, 1318].forEach((f, i) => tone(f, .26, 'sine', .15, i * .12)); },
+  whoosh: () => tone(300, .18, 'sawtooth', .05),
+};
+/* 真人单字发音（仓库 audio/ 下 60 个 MP3，离线也能听） */
+const audioCache = {};
+function speakChar(c) {
+  return new Promise(resolve => {
+    if (S.mute) return resolve();
+    try {
+      const a = audioCache[c] || (audioCache[c] = new Audio('audio/' + encodeURIComponent(c) + '.mp3'));
+      a.pause(); a.currentTime = 0; a.volume = 1;
+      a.onended = resolve; a.onerror = resolve;
+      const pr = a.play(); if (pr && pr.catch) pr.catch(resolve);
+    } catch (e) { resolve(); }
+  });
+}
+async function speakWord(w, gap = 70) {
+  for (const c of w) {
+    if (!/[，。！？、…·\s\-—]/.test(c)) await speakChar(c);
+    await delay(gap);
+  }
+}
+async function speakSentence(line) {
+  for (const c of line) {
+    if (/[，。！？、…·\s\-—]/.test(c)) { await delay(240); continue; }
+    await speakChar(c); await delay(70);
+  }
+}
+
+/* ---------------- 特效 ---------------- */
+function initSky() {
+  const box = $('stars-bg');
+  let h = '';
+  for (let i = 0; i < 46; i++) {
+    h += `<span class="sky-star" style="left:${(Math.random() * 100).toFixed(1)}%;top:${(Math.random() * 62).toFixed(1)}%;animation-delay:${(Math.random() * 3).toFixed(1)}s"></span>`;
+  }
+  box.innerHTML = h;
+}
+function floatText(txt, x, y, color) {
+  const el = document.createElement('div');
+  el.className = 'float-txt'; el.textContent = txt;
+  el.style.left = (x || innerWidth / 2) + 'px'; el.style.top = (y || innerHeight / 2) + 'px';
+  if (color) el.style.color = color;
+  document.body.appendChild(el); setTimeout(() => el.remove(), 1150);
+}
+function confetti(n = 16) {
+  const emo = ['⭐', '🎉', '💎', '✨', '🌟', '🎊'];
+  for (let i = 0; i < n; i++) {
+    setTimeout(() => {
+      const d = document.createElement('div');
+      d.className = 'confetti'; d.textContent = pick(emo);
+      d.style.left = (Math.random() * 96) + '%'; d.style.top = '-30px';
+      document.body.appendChild(d); setTimeout(() => d.remove(), 1800);
+    }, i * 60);
+  }
+}
+function updateChips() {
+  $('gemChip').textContent = `💎 ${S.gems.length} / 60`;
+  $('starChip').textContent = `⭐ ${S.stars}`;
+  $('muteBtn').textContent = S.mute ? '🔇' : '🔊';
+}
+function show(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('on'));
+  $('scr-' + name).classList.add('on');
+  SFX.page();
+}
+
+/* ---------------- 流程状态 ---------------- */
+let F = {book: 0, stage: 'home', learnIdx: 0, learnChars: [], pool: [], games: [], gi: 0, q: 0, combo: 0, traced: false, locked: false, answer: null};
+function learnedChars(bookIdx) {
+  return uniq(BOOKS.slice(0, bookIdx + 1).flatMap(b => b.chars));
+}
+function startBook(i) {
+  F.book = i; F.stage = 'story'; F.learnIdx = 0; F.q = 0; F.gi = 0; F.combo = 0;
+  F.learnChars = BOOKS[i].chars.slice();
+  F.games = gamesForBook(i);
+  F.pool = learnedChars(i);
+  const b = BOOKS[i];
+  $('storyTitle').textContent = `第 ${i + 1} 站 · ${b.zone}`;
+  $('storySpeech').textContent = `咩～这里是「${b.zone}」！${b.villain}只要认出这里的汉字宝石，能量就会回到汉字山！`;
+  $('storyVillain').textContent = `迷雾怪：「嘿嘿，这些字你肯定不认识！」`;
+  $('storyMission').textContent = `🎯 任务：认 ${F.learnChars.length} 个新字 → 玩 2 个小游戏 → 自己读完一本小书`;
+  show('story');
+}
+function goLearn() { F.stage = 'learn'; F.learnIdx = 0; renderLearn(); show('learn'); }
+function goGame() { F.stage = 'game'; F.gi = 0; F.q = 0; F.combo = 0; renderGame(); show('game'); }
+function goRead() { F.stage = 'read'; renderRead(); show('read'); }
+function goAward() { F.stage = 'award'; finishBook(); renderAward(); show('award'); }
+function goMap() { F.stage = 'map'; renderMap(); show('map'); }
+
+/* ---------------- 首页 & 地图 ---------------- */
+function renderMap() {
+  const wrap = $('mapWrap');
+  wrap.querySelectorAll('.node').forEach(n => n.remove());
+  const POS = [[9, 85], [27, 74], [45, 81], [62, 67], [79, 73], [87, 50], [70, 37], [50, 45], [30, 27], [15, 14]];
+  BOOKS.forEach((b, i) => {
+    const locked = i > S.unlocked;
+    const done = S.done.includes(i);
+    const n = document.createElement('div');
+    n.className = 'node' + (locked ? ' lock' : '') + (done ? ' done' : '') + (i === S.unlocked && !done ? ' cur' : '');
+    n.style.left = POS[i][0] + '%'; n.style.top = POS[i][1] + '%';
+    n.innerHTML = `<div class="node-badge">${locked ? '🔒' : b.emo}</div>
+      <div class="node-name">${i + 1}. ${b.zone}</div>
+      <div class="node-sub">${done ? '✅ ' + b.badge : (locked ? '未解锁' : b.chars.join('') )}</div>
+      ${done ? '<span class="tick">⭐</span>' : ''}`;
+    n.onclick = () => {
+      if (locked) { SFX.wrong(); floatText('先通过上一站哦！', innerWidth / 2, innerHeight / 2, '#fff'); return; }
+      unlockAudio(); startBook(i);
     };
+    wrap.appendChild(n);
+  });
+}
 
-    const wordGroups = {};
-    for (const [char, groups] of Object.entries(rawWordGroups)) {
-      const valid = groups.filter(word => [...word].every(c => allChars.has(c)));
-      if (valid.length > 0) wordGroups[char] = valid;
+/* ---------------- 认字（看图 → 听音 → 组词 → 描红） ---------------- */
+function renderLearn() {
+  const c = F.learnChars[F.learnIdx];
+  const info = CHARS[c];
+  $('learnTitle').textContent = `第 ${F.book + 1} 站 · 认字 ${F.learnIdx + 1}/${F.learnChars.length}`;
+  $('learnHint').textContent = info.x ? '看图画变汉字 → 听一听 → 描一描' : '听一听 → 组个词 → 描一描';
+  $('bigChar').textContent = c;
+  $('charPinyin').textContent = '🔊 点字听读音';
+  $('picEmoji').textContent = info.e;
+  $('picHint').textContent = info.h;
+  $('traceChar').textContent = c;
+  $('traceTip').textContent = '✏️ 用手指在格子里描一描';
+  F.traced = false;
+  $('learnDots').innerHTML = F.learnChars.map((_, i) =>
+    `<span class="pdot ${i < F.learnIdx ? 'done' : (i === F.learnIdx ? 'on' : '')}"></span>`).join('');
+  $('wordList').innerHTML = info.w.map(w => `<span class="word-pill" data-w="${w}">${w}</span>`).join('');
+  $('wordList').querySelectorAll('.word-pill').forEach(el => {
+    el.onclick = () => { SFX.tap(); speakWord(el.dataset.w); };
+  });
+  $('charCard').onclick = () => { SFX.tap(); speakChar(c); };
+  setupTrace();
+  // 象形演示：图画先出现，汉字再「长」出来
+  if (info.x) {
+    $('bigChar').style.opacity = '0';
+    $('bigChar').style.transform = 'scale(.3)';
+    $('bigChar').style.transition = 'all .45s cubic-bezier(.2,1.5,.5,1)';
+    setTimeout(() => {
+      $('bigChar').style.opacity = '1'; $('bigChar').style.transform = 'scale(1)';
+      speakChar(c);
+    }, 780);
+  } else {
+    $('bigChar').style.opacity = '1'; $('bigChar').style.transform = 'scale(1)';
+    setTimeout(() => speakChar(c), 220);
+  }
+}
+function setupTrace() {
+  const cv = $('traceCanvas'), ctx = cv.getContext('2d');
+  ctx.clearRect(0, 0, 300, 300);
+  ctx.strokeStyle = 'rgba(225,165,95,.38)'; ctx.lineWidth = 2; ctx.setLineDash([6, 5]);
+  [[150, 0, 150, 300], [0, 150, 300, 150], [0, 0, 300, 300], [300, 0, 0, 300]].forEach(l => {
+    ctx.beginPath(); ctx.moveTo(l[0], l[1]); ctx.lineTo(l[2], l[3]); ctx.stroke();
+  });
+  ctx.setLineDash([]);
+  const cells = new Set();
+  let drawing = false, last = null, done = false;
+  const pos = e => {
+    const r = cv.getBoundingClientRect();
+    return {x: (e.clientX - r.left) / r.width * 300, y: (e.clientY - r.top) / r.height * 300};
+  };
+  const move = e => {
+    if (!drawing || done) return;
+    e.preventDefault();
+    const p = pos(e);
+    ctx.strokeStyle = 'rgba(255,155,45,.9)'; ctx.lineWidth = 17;
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.beginPath(); ctx.moveTo(last ? last.x : p.x, last ? last.y : p.y); ctx.lineTo(p.x, p.y); ctx.stroke();
+    cells.add(`${Math.floor(p.x / 37.5)},${Math.floor(p.y / 37.5)}`);
+    last = p;
+    if (cells.size >= 12 && !done) {
+      done = true; F.traced = true;
+      SFX.right(); floatText('描得真棒！⭐', innerWidth / 2, innerHeight * .6, '#ffe06a');
+      $('traceTip').textContent = '✅ 描完啦！你真棒';
     }
+  };
+  cv.onpointerdown = e => { unlockAudio(); drawing = true; last = pos(e); cv.setPointerCapture(e.pointerId); };
+  cv.onpointermove = move;
+  cv.onpointerup = () => { drawing = false; last = null; };
+  cv.onpointercancel = () => { drawing = false; last = null; };
+}
 
-    const GROUP_SIZE = 5;
-    let currentLevelIndex = 0, currentGroupIndex = 0;
-    let currentWords = [], currentQuizWords = [];
-    let gameActive = false, quizActive = false, totalStars = 0;
-    let progress = { unlockedLevel: 1, completedGroups: {}, stars: 0 };
-    let speechSupported = false; // 系统语音合成是否可用
-
-    const startScreen = document.getElementById('startScreen');
-    const mapScreen = document.getElementById('mapScreen');
-    const groupScreen = document.getElementById('groupScreen');
-    const gameScreen = document.getElementById('gameScreen');
-    const quizScreen = document.getElementById('quizScreen');
-    const levelGrid = document.getElementById('levelGrid');
-    const groupTitle = document.getElementById('groupTitle');
-    const groupContainer = document.getElementById('groupContainer');
-    const playAudioBtn = document.getElementById('playAudioBtn');
-    const gameMessage = document.getElementById('gameMessage');
-    const optionsContainer = document.getElementById('optionsContainer');
-    const progressFill = document.getElementById('progressFill');
-    const finishGroupBtn = document.getElementById('finishGroupBtn');
-    const starDisplay = document.getElementById('starDisplay');
-    const gameLevelInfo = document.getElementById('gameLevelInfo');
-    const retryHint = document.getElementById('retryHint');
-    const quizPlayBtn = document.getElementById('quizPlayBtn');
-    const quizMessage = document.getElementById('quizMessage');
-    const quizOptionsContainer = document.getElementById('quizOptionsContainer');
-    const quizCompleteBtn = document.getElementById('quizCompleteBtn');
-    const modeHintElem = document.getElementById('modeHint');
-    const globalModeHint = document.getElementById('globalModeHint');
-
-    // 音频上下文
-    let audioCtx = null;
-    function createAudioContext() {
-      if (audioCtx) return;
-      try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
-    }
-    function resumeAudio() { if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume(); }
-    document.addEventListener('touchstart', () => {
-      createAudioContext(); resumeAudio();
-      if (audioCtx) {
-        const buf = audioCtx.createBuffer(1,1,22050);
-        const src = audioCtx.createBufferSource(); src.buffer = buf;
-        src.connect(audioCtx.destination); src.start(0);
-      }
-    }, { passive: true, once: true });
-
-    function playBeep(freq, type, dur=0.15) {
-      if (!audioCtx) createAudioContext(); resumeAudio();
-      try {
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.type = type; osc.frequency.value = freq; gain.gain.value = 0.25;
-        osc.connect(gain); gain.connect(audioCtx.destination); osc.start();
-        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
-        osc.stop(audioCtx.currentTime + dur);
-      } catch(e) {}
-    }
-    function soundCorrect() { playBeep(660,'sine',0.2); setTimeout(()=>playBeep(880,'sine',0.25),150); }
-    function soundWrong() { playBeep(200,'triangle',0.3); }
-
-    function playCharAudio(char) {
-      return new Promise((resolve) => {
-        const audio = new Audio('audio/' + char + '.mp3');
-        audio.volume = 1;
-        audio.onended = resolve;
-        audio.onerror = () => resolve();
-        audio.play().catch(() => resolve());
-      });
-    }
-
-    // 检测语音合成是否可用
-    async function detectSpeech() {
-      if (!window.speechSynthesis) return false;
-      // 尝试获取语音列表
-      const voices = speechSynthesis.getVoices();
-      if (voices.length > 0) return voices.some(v => v.lang.includes('zh'));
-      return new Promise(resolve => {
-        speechSynthesis.onvoiceschanged = () => {
-          const v = speechSynthesis.getVoices();
-          resolve(v.some(vo => vo.lang.includes('zh')));
+/* ---------------- 绘本自主阅读 ---------------- */
+function renderRead() {
+  const b = BOOKS[F.book];
+  $('readTitle').textContent = `📖 我自己读 · 第 ${F.book + 1} 本`;
+  $('bookTitle').textContent = b.book;
+  const box = $('bookLines'); box.innerHTML = '';
+  b.story.forEach(line => {
+    const row = document.createElement('div'); row.className = 'book-line';
+    [...line].forEach(ch => {
+      const sp = document.createElement('span');
+      if (/[，。！？、…·\s\-—]/.test(ch)) { sp.className = 'punc'; sp.textContent = ch; }
+      else {
+        sp.className = 'hz'; sp.textContent = ch;
+        sp.onclick = ev => {
+          ev.stopPropagation(); unlockAudio(); SFX.tap();
+          sp.classList.add('speaking'); setTimeout(() => sp.classList.remove('speaking'), 320);
+          speakChar(ch);
         };
-        setTimeout(() => resolve(false), 1500);
-      });
-    }
-
-    // 用系统语音朗读词组
-    function speakGroups(groups) {
-      if (!speechSupported || !window.speechSynthesis) return;
-      const text = groups.join('， '); // 用逗号分隔，自然停顿
-      window.speechSynthesis.cancel();
-      const utter = new SpeechSynthesisUtterance(text);
-      utter.lang = 'zh-CN';
-      utter.rate = 0.85;
-      utter.pitch = 1;
-      utter.volume = 1;
-      window.speechSynthesis.speak(utter);
-    }
-
-    // 快速连读 MP3 词组（回退方案）
-    async function fallbackSpeakGroups(groups) {
-      for (let i = 0; i < groups.length; i++) {
-        const word = groups[i];
-        for (const c of word) {
-          await playCharAudio(c);
-          await new Promise(r => setTimeout(r, 50)); // 缩短间隔
-        }
-        if (i < groups.length - 1) {
-          await new Promise(r => setTimeout(r, 300)); // 词组间停顿
-        }
       }
-    }
-
-    // 核心：播放单字 + 词组
-    async function playWordWithGroup(char) {
-      playBeep(800, 'sine', 0.12);
-      await playCharAudio(char); // 单字仍然用 MP3
-
-      const groups = wordGroups[char];
-      if (groups && groups.length > 0) {
-        // 随机选 2~3 个词组
-        const shuffled = [...groups].sort(() => Math.random() - 0.5);
-        const selected = shuffled.slice(0, Math.min(3, shuffled.length));
-
-        if (speechSupported) {
-          // 语音合成模式：自然朗读词组
-          speakGroups(selected);
-        } else {
-          // 回退模式：快速连读 MP3
-          await fallbackSpeakGroups(selected);
-        }
-      }
-    }
-
-    // 初始化语音检测
-    async function initSpeech() {
-      speechSupported = await detectSpeech();
-      if (speechSupported) {
-        modeHintElem.textContent = '✅ 自然朗读模式已开启';
-        globalModeHint.textContent = '';
-        globalModeHint.classList.add('hidden');
-      } else {
-        modeHintElem.textContent = '🔇 快速连读模式（词组由单字合成）';
-        globalModeHint.textContent = '💡 词组朗读已优化，仍建议家长陪读';
-        globalModeHint.classList.remove('hidden');
-      }
-    }
-
-    // 进度
-    function saveProgress() {
-      progress.stars = totalStars;
-      localStorage.setItem('sheep_mountain_progress', JSON.stringify(progress));
-    }
-    function loadProgress() {
-      const saved = localStorage.getItem('sheep_mountain_progress');
-      if (saved) {
-        try {
-          const obj = JSON.parse(saved);
-          progress = obj;
-          totalStars = progress.stars || 0;
-          if (!progress.completedGroups) progress.completedGroups = {};
-          if (typeof progress.unlockedLevel !== 'number') progress.unlockedLevel = 1;
-        } catch(e) { resetProgress(); }
-      } else { resetProgress(); }
-      updateStarDisplay();
-    }
-    function resetProgress() {
-      progress = { unlockedLevel: 1, completedGroups: {}, stars: 0 };
-      totalStars = 0;
-      saveProgress();
-    }
-    function updateStarDisplay() { starDisplay.textContent = `⭐ ${totalStars} 颗星星`; }
-    function addStars(n) { totalStars += n; updateStarDisplay(); saveProgress(); }
-    function isGroupCompleted(li, gi) { return progress.completedGroups[li]?.includes(gi); }
-    function markGroupCompleted(li, gi) {
-      if (!progress.completedGroups[li]) progress.completedGroups[li] = [];
-      if (!progress.completedGroups[li].includes(gi)) { progress.completedGroups[li].push(gi); saveProgress(); }
-    }
-    function getTotalGroups(li) { return Math.ceil(LEVELS[li].words.length / GROUP_SIZE); }
-    function isLevelFullyCompleted(li) {
-      for (let i = 0; i < getTotalGroups(li); i++) if (!isGroupCompleted(li,i)) return false;
-      return true;
-    }
-    function spawnStars(count=8) {
-      for (let i = 0; i < count; i++) {
-        setTimeout(() => {
-          const s = document.createElement('div'); s.className='star-rain'; s.textContent='⭐';
-          s.style.left=Math.random()*80+'%'; s.style.top=Math.random()*40+'%';
-          document.body.appendChild(s); setTimeout(()=>s.remove(),1300);
-        }, i*80);
-      }
-    }
-
-    // 启动按钮（增加语音检测）
-    document.getElementById('startBtn').addEventListener('click', async () => {
-      document.getElementById('startBtn').disabled = true;
-      modeHintElem.textContent = '正在检测朗读引擎...';
-      await initSpeech();
-      startScreen.classList.add('hidden');
-      mapScreen.classList.remove('hidden');
-      renderMap();
+      row.appendChild(sp);
     });
+    row.onclick = () => {
+      unlockAudio(); row.classList.add('read');
+      speakSentence(line);
+      $('bookFoot').textContent = '🔊 小羊在读：' + line;
+    };
+    box.appendChild(row);
+  });
+  $('bookFoot').textContent = '✨ 这些字你都认识啦，自己读一遍吧！';
+}
 
-    function renderMap() {
-      levelGrid.innerHTML = '';
-      LEVELS.forEach((level, idx) => {
-        const card = document.createElement('div'); card.className = 'level-card';
-        const unlocked = idx < progress.unlockedLevel;
-        if (!unlocked) card.classList.add('locked');
-        const completed = isLevelFullyCompleted(idx);
-        card.innerHTML = `<div class="level-emoji">${level.emoji}</div><div class="level-name">第${idx+1}关·${level.name}</div><div class="level-stars">${completed?'🌟已通关':(unlocked?'🔓可挑战':'🔒未解锁')}</div>`;
-        card.addEventListener('click', () => {
-          if (!unlocked) { playBeep(300,'triangle',0.3); return; }
-          openLevel(idx);
-        });
-        levelGrid.appendChild(card);
-      });
-    }
-    function openLevel(li) {
-      currentLevelIndex = li;
-      mapScreen.classList.add('hidden'); groupScreen.classList.remove('hidden');
-      renderGroups();
-    }
-    function renderGroups() {
-      const level = LEVELS[currentLevelIndex];
-      groupTitle.textContent = `🐑 ${level.name} · 第${currentLevelIndex+1}关`;
-      const total = getTotalGroups(currentLevelIndex);
-      groupContainer.innerHTML = '';
-      for (let i = 0; i < total; i++) {
-        const btn = document.createElement('div'); btn.className = 'group-btn'; btn.textContent = i+1;
-        if (isGroupCompleted(currentLevelIndex, i)) btn.classList.add('completed');
-        else if (i > 0 && !isGroupCompleted(currentLevelIndex, i-1)) btn.classList.add('locked');
-        btn.addEventListener('click', () => {
-          if (btn.classList.contains('locked')) { playBeep(300,'triangle',0.3); return; }
-          startGroupGame(i);
-        });
-        groupContainer.appendChild(btn);
-      }
-    }
+/* ---------------- 通关结算 & 奖状 ---------------- */
+function finishBook() {
+  const b = BOOKS[F.book];
+  let gained = 0;
+  b.chars.forEach(c => { if (!S.gems.includes(c)) { S.gems.push(c); gained++; } });
+  if (!S.done.includes(F.book)) S.done.push(F.book);
+  S.stars += 5 + F.learnChars.length * 2 + gained;
+  S.unlocked = Math.max(S.unlocked, Math.min(BOOKS.length - 1, F.book + 1));
+  S.best = Math.max(S.best, F.combo);
+  save(); updateChips(); confetti(22); SFX.win();
+  F.gained = gained;
+}
+function renderAward() {
+  const b = BOOKS[F.book];
+  const last = F.book === BOOKS.length - 1;
+  $('awardTitle').textContent = last ? '👑 你登上汉字山啦！' : `🎉 获得「${b.badge}」`;
+  $('awardGems').innerHTML = b.chars.map((c, i) =>
+    `<div class="gem-mini" style="animation-delay:${i * .09}s" title="${c}"></div>`).join('');
+  $('awardNext').textContent = last ? '🏆 看看我的宝石' : '下一站 →';
+  drawCert();
+}
+function drawCert() {
+  const cv = $('certCanvas'), g = cv.getContext('2d');
+  const b = BOOKS[F.book];
+  g.fillStyle = '#fffaf0'; g.fillRect(0, 0, 1000, 660);
+  g.strokeStyle = '#e8bd5c'; g.lineWidth = 16; g.strokeRect(24, 24, 952, 612);
+  g.strokeStyle = '#f4d999'; g.lineWidth = 3; g.strokeRect(44, 44, 912, 572);
+  g.fillStyle = '#fff3d0'; g.beginPath(); g.arc(500, 130, 74, 0, Math.PI * 2); g.fill();
+  g.font = '70px serif'; g.textAlign = 'center'; g.fillText('🐑', 500, 155);
+  g.fillStyle = '#b4761d'; g.font = 'bold 54px KaiTi,STKaiti,serif';
+  g.fillText('阅 读 小 勇 士 奖 状', 500, 258);
+  g.fillStyle = '#6b5630'; g.font = '30px KaiTi,STKaiti,serif';
+  g.fillText(`恭喜你读完 ${b.book}`, 500, 322);
+  g.fillText(`在「${b.zone}」认识了 ${b.chars.length} 个汉字宝石`, 500, 370);
+  g.fillStyle = '#2f3b6e'; g.font = 'bold 46px KaiTi,STKaiti,serif';
+  g.fillText(b.chars.join('  '), 500, 440);
+  g.fillStyle = '#a0793d'; g.font = '24px "Microsoft YaHei",sans-serif';
+  g.fillText(`徽章：${b.badge}　·　已收集 ${S.gems.length} / 60 颗宝石　·　⭐ ${S.stars}`, 500, 510);
+  g.fillStyle = '#9a8a68'; g.font = '20px "Microsoft YaHei",sans-serif';
+  g.fillText(new Date().toLocaleDateString('zh-CN') + '　小羊上山 · 汉字山能量大冒险', 500, 578);
+  g.font = '40px serif'; g.fillText('⭐', 150, 560); g.fillText('⭐', 850, 560);
+}
 
-    let currentRoundWord = null;
-    let wrongAttempts = 0;
+/* ---------------- 图鉴 / 家长 ---------------- */
+function renderDex() {
+  $('dexSub').textContent = `已点亮 ${S.gems.length} / 60 颗 · 点亮的宝石可以点一下听发音`;
+  $('dexGrid').innerHTML = BOOKS.flatMap(b => b.chars).map(c => {
+    const got = S.gems.includes(c);
+    return `<div class="dex-cell ${got ? 'got' : ''}" data-c="${got ? c : ''}">${got ? c : '·'}</div>`;
+  }).join('');
+  $('dexGrid').querySelectorAll('.dex-cell.got').forEach(el => {
+    el.onclick = () => { SFX.tap(); speakChar(el.dataset.c);
+      floatText(el.dataset.c, innerWidth / 2, innerHeight / 2, '#ffe06a'); };
+  });
+}
+function renderParent() {
+  $('parentNote').innerHTML = `
+    <b>这套游戏按什么编的？</b><br>
+    严格依据《小羊上山儿童汉语分级读物》<b>第 1 级 60 个核心字</b>，按 10 册分成 10 个登山站点。
+    每册的词语、绘本短句<b>只使用本册及之前学过的字</b>——这是分级读物最核心的编写原则，
+    孩子认完几个新字就能自己读完一页，成就感才是坚持下来的动力。<br><br>
+    <b>一关怎么玩（约 5 分钟）</b><br>
+    ① <b>认字</b>：图画变汉字 → 真人发音 → 组词 → 手指描红（不考笔顺，重在参与）<br>
+    ② <b>玩 2 个小游戏</b>：抢宝石 / 敲迷雾怪 / 谁不见了 / 对对碰 / 词语拼拼乐，逐关轮换<br>
+    ③ <b>自己读</b>：点单字听发音，点整句听小羊朗读，读完领一张可保存的奖状<br><br>
+    <b>参考了哪些识字产品的做法</b><br>
+    悟空识字的「剧情闯关 + 象形演示」、洪恩识字的「玩认练写闭环 + 每几字一复习」、
+    叫叫识字的「每天 6 字 + 次日复习」、以及教材配套的「字卡游戏 / 读后小游戏 / 荣誉证书」。
+    针对 5 岁男孩加入了怪兽、宝石收集、连击、即时音效和登山进度。<br><br>
+    <b>发音说明</b><br>
+    60 个单字是仓库自带的真人录音，<b>离线也能听</b>；其余音效由浏览器合成。
+    首次点击页面会解锁声音，右下角 🔊 可静音。进度自动保存在本机浏览器里。<br><br>
+    <b>建议</b>：每天 1 站，读完请真的夸一句。孩子卡住时别直接报答案，陪他再点一次喇叭。`;
+}
 
-    function startGroupGame(gi) {
-      currentGroupIndex = gi;
-      currentWords = [...getGroupWords(currentLevelIndex, gi)];
-      gameActive = true;
-      groupScreen.classList.add('hidden'); gameScreen.classList.remove('hidden');
-      finishGroupBtn.classList.add('hidden');
-      gameLevelInfo.textContent = `📖 第${currentLevelIndex+1}关 · 第${gi+1}组`;
-      progressFill.style.width = '0%';
-      nextWord();
-    }
+/* ---------------- 顶栏 / 按钮 ---------------- */
+function bindUI() {
+  $('startBtn').onclick = () => { unlockAudio(); SFX.tap(); goMap(); };
+  $('dexHomeBtn').onclick = () => { unlockAudio(); renderDex(); show('dex'); F.dexFrom = 'home'; };
+  $('dexBtn').onclick = () => { unlockAudio(); renderDex(); show('dex'); F.dexFrom = F.stage; };
+  $('dexBack').onclick = () => { show(F.dexFrom === 'home' ? 'home' : 'map'); };
+  $('homeBtn').onclick = () => { show('home'); };
+  $('muteBtn').onclick = () => { S.mute = !S.mute; save(); updateChips(); if (!S.mute) { unlockAudio(); SFX.right(); } };
+  $('parentBtn').onclick = () => { renderParent(); show('parent'); };
+  $('parentBack').onclick = () => show('home');
+  $('storyGo').onclick = () => { unlockAudio(); SFX.tap(); goLearn(); };
+  $('learnBack').onclick = () => { renderLearn(); };
+  $('learnNext').onclick = () => {
+    SFX.tap();
+    if (F.traced) { S.stars += 1; save(); updateChips(); }
+    F.learnIdx++;
+    if (F.learnIdx >= F.learnChars.length) goGame(); else renderLearn();
+  };
+  $('readDone').onclick = () => { unlockAudio(); goAward(); };
+  $('certDown').onclick = () => {
+    const a = document.createElement('a');
+    a.download = `小羊上山-第${F.book + 1}站奖状.png`;
+    a.href = $('certCanvas').toDataURL('image/png'); a.click(); SFX.tap();
+  };
+  $('awardNext').onclick = () => {
+    if (F.book === BOOKS.length - 1) { renderDex(); F.dexFrom = 'home'; show('dex'); }
+    else goMap();
+  };
+  $('resetBtn').onclick = () => {
+    if (!confirm('确定清空所有进度，从头开始吗？')) return;
+    S = {...DEFAULT, done: [], gems: []}; save(); updateChips(); renderDex(); SFX.page();
+  };
+}
 
-    function getGroupWords(li, gi) {
-      return LEVELS[li].words.slice(gi*GROUP_SIZE, gi*GROUP_SIZE+GROUP_SIZE);
-    }
 
-    function nextWord() {
-      if (!gameActive || currentWords.length === 0) {
-        finishGroup();
-        return;
-      }
-      const word = currentWords[0];
-      currentRoundWord = word;
-      wrongAttempts = 0;
-      retryHint.textContent = '';
-      gameMessage.textContent = '🔊 先听听小羊怎么说！';
-      optionsContainer.innerHTML = '';
-      playAudioBtn.classList.remove('playing');
+/* =====================================================================
+   小羊上山 · 5 种识字小游戏（逐册轮换，参考字卡游戏与主流识字 App）
+   ===================================================================== */
+const QCOUNT = {gem: 5, whack: 5, missing: 4, match: 1, build: 5};
+const PRAISE = ['太棒了！', '好厉害！', '答对啦！', '超级棒！', '你真神！', '完全正确！'];
 
-      const correct = word;
-      const distractors = getDistractors(correct, 3, currentLevelIndex);
-      const options = [correct, ...distractors];
-      shuffleArray(options);
-      options.forEach(opt => {
-        const card = document.createElement('div');
-        card.className = 'option-card';
-        card.textContent = opt;
-        card.addEventListener('click', () => handleGameChoice(card, opt, correct));
-        optionsContainer.appendChild(card);
-      });
+function distractors(correct, n, exclude = []) {
+  const pool = F.pool.filter(c => c !== correct && !exclude.includes(c));
+  return shuffle(pool).slice(0, n);
+}
+function updateCombo() {
+  const chip = $('comboChip');
+  chip.textContent = `🔥 连击 ×${F.combo}`;
+  chip.classList.toggle('on', F.combo >= 2);
+  S.best = Math.max(S.best || 0, F.combo);
+}
+function onRight(el) {
+  if (F.locked) return;              // 防止小朋友连点把题目跳过去
+  F.locked = true;
+  if (el) el.classList.add('right');
+  SFX.right();
+  F.combo++;
+  S.stars += 2 + Math.min(F.combo, 5);
+  updateCombo(); save(); updateChips();
+  floatText(F.combo >= 3 ? `连击 ×${F.combo}!` : pick(PRAISE),
+    innerWidth / 2, innerHeight * .45, F.combo >= 3 ? '#ff9a3c' : '#ffd34a');
+  if (F.combo >= 3) SFX.combo();
+  const type = F.games[F.gi];
+  F.q++;
+  setTimeout(() => {
+    if (F.q >= QCOUNT[type]) gameDone(); else renderGame();
+  }, 800);
+}
+function onWrong(el, msg) {
+  if (el) { el.classList.add('wrong'); setTimeout(() => el.classList.remove('wrong'), 420); }
+  SFX.wrong(); F.combo = 0; updateCombo();
+  $('gameMsg').className = 'msg bad';
+  $('gameMsg').textContent = msg || '再听一次，你可以的！💪';
+  setTimeout(() => { $('gameMsg').className = 'msg'; }, 1400);
+}
+function gameDone() {
+  F.gi++; F.q = 0;
+  if (F.gi >= F.games.length) { confetti(14); goRead(); }
+  else renderGame();
+}
+function renderGame() {
+  F.locked = false;
+  const type = F.games[F.gi];
+  const g = GAMES[type];
+  $('gameTitle').textContent = `${g.emo} ${g.name}（第 ${F.gi + 1}/2 关）`;
+  $('gameTip').textContent = g.tip;
+  $('gameMsg').textContent = '';
+  $('gameDots').innerHTML = Array.from({length: QCOUNT[type]}, (_, i) =>
+    `<span class="pdot ${i < F.q ? 'done' : (i === F.q ? 'on' : '')}"></span>`).join('');
+  updateCombo();
+  ({gem: renderGem, whack: renderWhack, missing: renderMissing, match: renderMatch, build: renderBuild})[type]();
+}
+function listenBlock(correct, label) {
+  return `<div class="listen-btn" id="bigListen">🔊</div>
+    <div class="hint" style="margin:-4px auto 10px">${label || '点喇叭再听一次'}</div>`;
+}
+function bindListen(correct) {
+  const b = $('bigListen');
+  if (b) b.onclick = () => { unlockAudio(); SFX.tap(); b.classList.add('playing'); speakChar(correct).then(() => b.classList.remove('playing')); };
+  setTimeout(() => { if (F.stage === 'game') speakChar(correct); }, 320);
+}
 
-      const totalWords = getGroupWords(currentLevelIndex, currentGroupIndex).length;
-      const completed = totalWords - currentWords.length;
-      progressFill.style.width = ((completed / totalWords) * 100) + '%';
+/* ---------- ① 抢汉字宝石：听音选字 ---------- */
+function renderGem() {
+  const correct = pick(F.pool);
+  const opts = shuffle([correct, ...distractors(correct, 3)]);
+  F.plan = {type: 'one', selectors: [`[data-val="${correct}"]`]};
+  $('gameArea').innerHTML = listenBlock(correct) +
+    `<div class="tile-grid" id="gemGrid">` +
+    opts.map(c => `<div class="tile gem-tile" data-val="${c}">${c}</div>`).join('') + `</div>`;
+  $('gemGrid').querySelectorAll('.tile').forEach(el => {
+    el.onclick = () => el.dataset.val === correct ? onRight(el) : onWrong(el, '不是这个哦，再听一听！');
+  });
+  bindListen(correct);
+}
 
-      playAudioBtn.onclick = () => {
-        if (playAudioBtn.classList.contains('playing')) return;
-        playAudioBtn.classList.add('playing');
-        playWordWithGroup(word).then(() => {
-          playAudioBtn.classList.remove('playing');
-        });
-      };
-    }
+/* ---------- ② 敲跑迷雾怪：听音敲对的字牌 ---------- */
+function renderWhack() {
+  const correct = pick(F.pool);
+  const need = Math.min(5, Math.max(3, F.pool.length - 1));
+  const others = distractors(correct, need);
+  const opts = shuffle([correct, ...others]);
+  F.plan = {type: 'one', selectors: [`[data-val="${correct}"]`]};
+  $('gameArea').innerHTML = listenBlock(correct, '听到哪个字，就敲举着那个字的小怪兽！') +
+    `<div class="whack-grid" id="whackGrid">` + opts.map(c => `
+      <div class="hole"><div class="monster up" data-val="${c}">
+        <div class="monster-body"><i class="monster-eye l"></i><i class="monster-eye r"></i></div>
+        <div class="monster-sign">${c}</div>
+      </div></div>`).join('') + `</div>`;
+  $('whackGrid').querySelectorAll('.monster').forEach(el => {
+    el.onclick = () => {
+      if (el.dataset.val === correct) { el.classList.add('hit'); SFX.whoosh(); onRight(null); }
+      else { el.classList.add('hit'); onWrong(null, '敲错啦，听听是哪个字！'); }
+    };
+  });
+  bindListen(correct);
+}
 
-    function handleGameChoice(card, selected, correct) {
-      if (!gameActive) return;
-      const allCards = document.querySelectorAll('#optionsContainer .option-card');
-      if (selected === correct) {
-        card.classList.add('correct-highlight');
-        soundCorrect();
-        gameMessage.textContent = '🎉 太棒了！你找对啦！';
-        spawnStars(5);
-        addStars(1);
-        currentWords.shift();
-        setTimeout(() => {
-          if (currentWords.length > 0) nextWord();
-          else finishGroup();
-        }, 1000);
-      } else {
-        wrongAttempts++;
-        card.classList.add('wrong-flash');
-        soundWrong();
-        if (wrongAttempts < 2) {
-          gameMessage.textContent = `🤔 不对哦，再听一次试试？（还可以错${2-wrongAttempts}次）`;
-          retryHint.textContent = `再听听看，是哪个字呢？`;
-        } else {
-          gameMessage.textContent = '💡 这个字是“' + correct + '”，记住它哟！';
-          retryHint.textContent = '';
-          allCards.forEach(c => {
-            if (c.textContent === correct) c.classList.add('correct-highlight');
-          });
-          currentWords.shift();
-          setTimeout(() => {
-            if (currentWords.length > 0) nextWord();
-            else finishGroup();
-          }, 1500);
+/* ---------- ③ 谁不见了：字卡记忆（教材配套字卡游戏） ---------- */
+function renderMissing() {
+  const cards = shuffle(F.pool).slice(0, 4);
+  const hidden = pick(cards);
+  const options = shuffle([hidden, ...distractors(hidden, 3, cards)]);
+  F.plan = {type: 'one', selectors: [`[data-val="${hidden}"]`]};
+  $('gameArea').innerHTML = `
+    <div class="hint">👀 记住这 4 个字，等一下有一个会偷偷跑掉！</div>
+    <div class="memory-row" id="memRow">${cards.map((c, i) =>
+      `<div class="mem-card" data-c="${c}" data-i="${i}">${c}</div>`).join('')}</div>
+    <div id="memAsk" style="display:none">
+      <p class="sub" style="margin:2px">谁不见了？把跑掉的字找出来！</p>
+      <div class="tile-grid" id="memOpts">${options.map(c =>
+        `<div class="tile" data-val="${c}">${c}</div>`).join('')}</div>
+    </div>`;
+  const row = $('memRow');
+  const reveal = () => {
+    row.querySelectorAll('.mem-card').forEach(el => {
+      const gone = el.dataset.c === hidden;
+      el.classList.toggle('covered', gone);
+      el.textContent = gone ? '' : el.dataset.c;
+    });
+    const ask = $('memAsk'); ask.style.display = 'block';
+    ask.querySelectorAll('.tile').forEach(el => {
+      el.onclick = () => el.dataset.val === hidden ? onRight(el) : onWrong(el, '再想想，刚才哪个字不见啦？');
+    });
+    speakChar(hidden);
+  };
+  setTimeout(() => {
+    if (F.stage !== 'game') return;
+    row.querySelectorAll('.mem-card').forEach(el => el.classList.add('covered'));
+    setTimeout(reveal, 500);
+  }, 2300);
+  // 展示阶段逐字读一遍
+  cards.forEach((c, i) => setTimeout(() => { if (F.stage === 'game') speakChar(c); }, 260 + i * 430));
+}
+
+/* ---------- ④ 汉字对对碰：字 ↔ 图画翻牌 ---------- */
+function renderMatch() {
+  const chars = shuffle(F.pool).slice(0, Math.min(6, F.pool.length));
+  const cards = shuffle(chars.flatMap(c => [
+    {k: c, t: 'char', v: c}, {k: c, t: 'pic', v: CHARS[c].e}
+  ]));
+  F.plan = {type: 'match', selectors: chars.map(c =>
+    cards.flatMap((x, i) => x.k === c ? [`[data-idx="${i}"]`] : []))};
+  $('gameArea').innerHTML = `
+    <div class="hint">🃏 翻开两张：一个汉字，配它的图画！</div>
+    <div class="match-grid" id="matchGrid">${cards.map((x, i) =>
+      `<div class="match-card" data-idx="${i}" data-k="${x.k}" data-t="${x.t}"><span style="opacity:.5">?</span></div>`).join('')}</div>`;
+  let first = null, matched = 0, lock = false;
+  $('matchGrid').querySelectorAll('.match-card').forEach(el => {
+    el.onclick = () => {
+      if (lock || el.classList.contains('flip') || el.classList.contains('matched')) return;
+      unlockAudio(); SFX.tap();
+      const x = cards[+el.dataset.idx];
+      el.classList.add('flip'); el.innerHTML = x.v;
+      if (!first) { first = el; speakChar(x.t === 'char' ? x.k : x.k); return; }
+      const y = cards[+first.dataset.idx];
+      if (first !== el && x.k === y.k && x.t !== y.t) {
+        first.classList.add('matched'); el.classList.add('matched');
+        first = null; matched++;
+        SFX.gem(); speakChar(x.k);
+        if (matched === chars.length) {
+          $('gameMsg').textContent = '🎉 全部配对成功！';
+          setTimeout(() => onRight(null), 700);
         }
-        setTimeout(() => {
-          card.classList.remove('wrong-flash');
-          allCards.forEach(c => c.classList.remove('correct-highlight'));
-        }, 1200);
-      }
-    }
-
-    function finishGroup() {
-      gameActive = false;
-      markGroupCompleted(currentLevelIndex, currentGroupIndex);
-      addStars(3);
-      gameMessage.textContent = '✨ 你好厉害！这一组完成啦！';
-      finishGroupBtn.classList.remove('hidden');
-      progressFill.style.width = '100%';
-      spawnStars(10);
-      finishGroupBtn.onclick = () => {
-        gameScreen.classList.add('hidden');
-        if (isLevelFullyCompleted(currentLevelIndex)) startLevelQuiz();
-        else { groupScreen.classList.remove('hidden'); renderGroups(); }
-      };
-    }
-
-    function startLevelQuiz() {
-      const allWords = LEVELS[currentLevelIndex].words;
-      currentQuizWords = [...allWords];
-      shuffleArray(currentQuizWords);
-      currentQuizWords = currentQuizWords.slice(0, Math.min(10, currentQuizWords.length));
-      quizActive = true;
-      groupScreen.classList.add('hidden'); gameScreen.classList.add('hidden');
-      quizScreen.classList.remove('hidden'); quizCompleteBtn.classList.add('hidden');
-      nextQuizWord();
-    }
-
-    let currentQuizWord = null;
-    let quizWrongAttempts = 0;
-
-    function nextQuizWord() {
-      if (!quizActive || currentQuizWords.length === 0) {
-        finishQuiz();
-        return;
-      }
-      const word = currentQuizWords[0];
-      currentQuizWord = word;
-      quizWrongAttempts = 0;
-      quizMessage.textContent = '🔊 听听看，是哪个字？';
-      quizOptionsContainer.innerHTML = '';
-      quizPlayBtn.classList.remove('playing');
-
-      const correct = word;
-      const distractors = getDistractors(correct, 3, currentLevelIndex);
-      const options = [correct, ...distractors];
-      shuffleArray(options);
-      options.forEach(opt => {
-        const card = document.createElement('div');
-        card.className = 'option-card';
-        card.textContent = opt;
-        card.addEventListener('click', () => handleQuizChoice(card, opt, correct));
-        quizOptionsContainer.appendChild(card);
-      });
-
-      quizPlayBtn.onclick = () => {
-        if (quizPlayBtn.classList.contains('playing')) return;
-        quizPlayBtn.classList.add('playing');
-        playWordWithGroup(word).then(() => {
-          quizPlayBtn.classList.remove('playing');
-        });
-      };
-    }
-
-    function handleQuizChoice(card, selected, correct) {
-      if (!quizActive) return;
-      const allCards = document.querySelectorAll('#quizOptionsContainer .option-card');
-      if (selected === correct) {
-        card.classList.add('correct-highlight');
-        soundCorrect();
-        quizMessage.textContent = '✅ 答对了！';
-        addStars(2);
-        currentQuizWords.shift();
-        setTimeout(() => {
-          if (currentQuizWords.length > 0) nextQuizWord();
-          else finishQuiz();
-        }, 800);
       } else {
-        quizWrongAttempts++;
-        card.classList.add('wrong-flash');
-        soundWrong();
-        if (quizWrongAttempts < 2) {
-          quizMessage.textContent = `再听听看，还有机会哦`;
-        } else {
-          quizMessage.textContent = `正确答案是“${correct}”`;
-          allCards.forEach(c => { if (c.textContent === correct) c.classList.add('correct-highlight'); });
-          currentQuizWords.shift();
-          setTimeout(() => {
-            if (currentQuizWords.length > 0) nextQuizWord();
-            else finishQuiz();
-          }, 1500);
-        }
+        lock = true; SFX.wrong();
+        const a = first, b = el; first = null;
         setTimeout(() => {
-          card.classList.remove('wrong-flash');
-          allCards.forEach(c => c.classList.remove('correct-highlight'));
-        }, 1000);
+          a.classList.remove('flip'); a.innerHTML = '<span style="opacity:.5">?</span>';
+          b.classList.remove('flip'); b.innerHTML = '<span style="opacity:.5">?</span>';
+          lock = false;
+        }, 720);
+      }
+    };
+  });
+}
+
+/* ---------- ⑤ 词语拼拼乐：把两个字拼成一个词 ---------- */
+function renderBuild() {
+  const valid = WORDS.filter(w => w.length === 2 && [...w].every(c => F.pool.includes(c)));
+  const word = pick(valid.length ? valid : ['上山']);
+  const tiles = shuffle([...word, ...distractors(word[0], 4, [...word])]);
+  F.plan = {type: 'build', selectors: [...word].map(c => `[data-val="${c}"]`)};
+  $('gameArea').innerHTML = `
+    <div class="listen-btn" id="bigListen">🔊</div>
+    <div class="hint">🀄 听一听「${word}」这个词，把两个字找出来放进去！</div>
+    <div class="build-slots" id="slots"><div class="slot"></div><div class="slot"></div></div>
+    <div class="build-pool" id="pool">${tiles.map(c =>
+      `<div class="pool-tile" data-val="${c}">${c}</div>`).join('')}</div>`;
+  let filled = [];
+  $('pool').querySelectorAll('.pool-tile').forEach(el => {
+    el.onclick = () => {
+      if (filled.length >= 2) return;
+      unlockAudio(); SFX.tap();
+      el.classList.add('used');
+      filled.push(el.dataset.val);
+      const slot = $('slots').children[filled.length - 1];
+      slot.textContent = el.dataset.val; slot.classList.add('filled');
+      speakChar(el.dataset.val);
+      if (filled.length === 2) {
+        const got = filled.join('');
+        if (got === word) {
+          $('gameMsg').textContent = `✅ ${word}！`;
+          speakWord(word); onRight(null);
+        } else {
+          onWrong(null, `「${got}」不是这个词，再试一次！`);
+          setTimeout(() => {
+            filled = [];
+            $('pool').querySelectorAll('.pool-tile').forEach(x => x.classList.remove('used'));
+            [...$('slots').children].forEach(s => { s.textContent = ''; s.classList.remove('filled'); });
+          }, 700);
+        }
+      }
+    };
+  });
+  $('bigListen').onclick = () => { unlockAudio(); SFX.tap(); speakWord(word); };
+  setTimeout(() => { if (F.stage === 'game') speakWord(word); }, 420);
+}
+
+/* ---------------- 自动化测试接口（不影响正常游玩） ---------------- */
+window.__test = {
+  state: () => ({book: F.book, stage: F.stage, gi: F.gi, q: F.q,
+    type: F.games[F.gi] || null, combo: F.combo, gems: S.gems.length,
+    stars: S.stars, done: S.done.slice(), unlocked: S.unlocked}),
+  plan: () => F.plan || null,
+};
+
+
+/* =====================================================================
+   启动 / 预览 / 自检入口
+   ===================================================================== */
+const qs = new URLSearchParams(location.search);
+
+function preview(p) {
+  const type = qs.get('type') || 'gem';
+  if (p === 'map') { renderMap(); show('map'); }
+  else if (p === 'story') startBook(0);
+  else if (p === 'learn') { startBook(4); goLearn(); }
+  else if (p === 'game') {
+    startBook(4); F.games = [GAMES[type] ? type : 'gem']; F.gi = 0; F.q = 0;
+    F.pool = learnedChars(4); renderGame(); show('game');
+  }
+  else if (p === 'read') { startBook(1); goRead(); }
+  else if (p === 'award') { startBook(0); F.stage = 'award'; finishBook(); renderAward(); show('award'); }
+  else if (p === 'dex') {
+    S.gems = BOOKS.flatMap(b => b.chars).slice(0, 26);
+    updateChips();
+    F.dexFrom = 'home'; renderDex(); show('dex');
+  }
+  else if (p === 'parent') { renderParent(); show('parent'); }
+  else show('home');
+}
+
+function smoke() {
+  const errs = [];
+  window.addEventListener('error', e => errs.push(e.message));
+  try {
+    renderMap(); renderDex(); renderParent();
+    [0, 4, 9].forEach(i => { startBook(i); goLearn(); renderRead(); finishBook(); renderAward(); });
+    startBook(4);
+    ['gem', 'whack', 'missing', 'match', 'build'].forEach(t => {
+      F.games = [t]; F.gi = 0; F.q = 0; F.pool = learnedChars(4);
+      renderGame();
+    });
+    const t = `SMOKE_OK err=${errs.length} gems=${S.gems.length} stars=${S.stars} ${errs.join('|')}`;
+    document.title = t; $('testOut').textContent = t;
+  } catch (e) {
+    const t = 'SMOKE_FAIL ' + (e.stack || e.message);
+    document.title = t; $('testOut').textContent = t;
+  }
+}
+
+/* 页面内全流程自测：真实驱动 DOM 点击，跑完 10 册 */
+function autotest() {
+  const errs = [];
+  window.addEventListener('error', e => errs.push(e.message));
+  document.body.classList.add('nofx');
+  localStorage.removeItem(KEY); S = loadSave(); updateChips();
+  unlockAudio();
+  const gameTypes = new Set(), booksSeen = new Set();
+  let loops = 0;
+  const report = (ok, msg) => {
+    const audio = AC ? AC.state : 'no-ctx';
+    const t = `AUTOTEST_${ok ? 'OK' : 'FAIL'} ${msg} books=${booksSeen.size} `
+      + `games=${[...gameTypes].join(',')} audio=${audio} err=${errs.length} ${errs.slice(0, 2).join('|')}`;
+    document.title = t; $('testOut').textContent = t;
+  };
+  const tick = () => {
+    if (++loops > 30000) return report(false, 'timeout');
+    const scr = document.querySelector('.screen.on').id;
+    booksSeen.add(F.book);
+    if (scr === 'scr-home') $('startBtn').click();
+    else if (scr === 'scr-map') {
+      const n = document.querySelector('.node.cur') || document.querySelector('.node:not(.lock):not(.done)');
+      if (n) n.click();
+      else return report(true, `gems=${S.gems.length} stars=${S.stars} done=${S.done.length}`);
+    }
+    else if (scr === 'scr-story') $('storyGo').click();
+    else if (scr === 'scr-learn') $('learnNext').click();
+    else if (scr === 'scr-game') {
+      const type = F.games[F.gi], plan = F.plan;
+      gameTypes.add(type);
+      if (plan && plan.type === 'match') {
+        const busy = document.querySelector('.match-card.flip:not(.matched)');
+        const un = [...document.querySelectorAll('.match-card:not(.matched)')];
+        if (!busy && un.length) {
+          const k = un[0].dataset.k;
+          const pair = un.filter(c => c.dataset.k === k);
+          if (pair.length === 2) { pair[0].click(); pair[1].click(); }
+        }
+      } else if (plan && type === 'missing') {
+        const ask = $('memAsk');
+        if (ask && ask.style.display === 'block') {
+          const el = document.querySelector(plan.selectors[0]); if (el) el.click();
+          F.plan = {type: 'wait', selectors: []};
+        }
+      } else if (plan && plan.type !== 'wait' && plan.selectors.length) {
+        const el = document.querySelector(plan.selectors[0]);
+        if (el) el.click();
+        F.plan = {type: plan.selectors.length > 1 ? plan.type : 'wait',
+                  selectors: plan.selectors.slice(1)};
       }
     }
+    else if (scr === 'scr-read') $('readDone').click();
+    else if (scr === 'scr-award') $('awardNext').click();
+    else if (scr === 'scr-dex') return report(true, `gems=${S.gems.length} stars=${S.stars} done=${S.done.length}`);
+    setTimeout(tick, 55);
+  };
+  tick();
+}
 
-    function finishQuiz() {
-      quizActive = false;
-      quizMessage.textContent = '🏅 测验完成！你真是识字小英雄！';
-      quizCompleteBtn.classList.remove('hidden');
-      spawnStars(14);
-      if (currentLevelIndex+1 < LEVELS.length && progress.unlockedLevel <= currentLevelIndex+1) {
-        progress.unlockedLevel = currentLevelIndex+2;
-        saveProgress();
-      }
-      addStars(5);
-      quizCompleteBtn.onclick = () => {
-        quizScreen.classList.add('hidden');
-        mapScreen.classList.remove('hidden');
-        renderMap();
-      };
+/* 真人 MP3 发音链路自检 */
+function audioTest() {
+  const chars = ['山', '马', '月', '我'];
+  let ok = 0, fail = 0;
+  const bad = [];
+  const check = () => {
+    if (ok + fail < chars.length) return;
+    unlockAudio();
+    const t = `AUDIOTEST_OK mp3=${ok}/${chars.length} ctx=${AC ? AC.state : 'none'} ${bad.join(',')}`;
+    document.title = t; $('testOut').textContent = t;
+  };
+  chars.forEach(c => {
+    const a = new Audio('audio/' + encodeURIComponent(c) + '.mp3');
+    a.addEventListener('canplaythrough', () => { ok++; check(); });
+    a.addEventListener('error', () => { fail++; bad.push(c + ':ERR'); check(); });
+    a.load();
+  });
+  setTimeout(() => {
+    if (!document.title.startsWith('AUDIOTEST')) {
+      const t = `AUDIOTEST_PARTIAL mp3=${ok}/${chars.length} ctx=${AC ? AC.state : 'none'}`;
+      document.title = t; $('testOut').textContent = t;
     }
+  }, 3000);
+}
 
-    function getDistractors(correct, count, li) {
-      const pool = [];
-      for (let i = Math.max(0, li-1); i <= Math.min(LEVELS.length-1, li+1); i++) {
-        pool.push(...LEVELS[i].words.filter(w => w !== correct));
-      }
-      const unique = [...new Set(pool)];
-      shuffleArray(unique);
-      return unique.slice(0, count);
-    }
-    function shuffleArray(arr) { for (let i=arr.length-1;i>0;i--) { const j=Math.floor(Math.random()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]]; } }
-    document.getElementById('backToMapBtn').addEventListener('click', ()=>{ groupScreen.classList.add('hidden'); mapScreen.classList.remove('hidden'); renderMap(); });
+function layoutDebug() {
+  setTimeout(() => {
+    const r = sel => {
+      const e = typeof sel === 'string' ? document.querySelector(sel) : sel;
+      if (!e) return null;
+      const b = e.getBoundingClientRect();
+      return [Math.round(b.left), Math.round(b.right), Math.round(b.width)];
+    };
+    const out = {
+      vw: innerWidth, docW: document.documentElement.scrollWidth,
+      app: r('#app'), frame: r('.frame'), screen: r('.screen.on'), topbar: r('.topbar'),
+      homeBtns: r('.home-btns'), panel: r('.home-panel'),
+      learnMain: r('.learn-main'), charCard: r('.char-card'), side: r('.side-card'),
+      trace: r('.trace-wrap'), hint: r('.hint'), dexGrid: r('.dex-grid')
+    };
+    const t = 'LAYOUT ' + JSON.stringify(out);
+    document.title = t; $('testOut').textContent = t;
+  }, 900);
+}
 
-    loadProgress();
-    startScreen.classList.remove('hidden');
-    mapScreen.classList.add('hidden');
-  })();
+function boot() {
+  if (qs.has('nofx')) document.body.classList.add('nofx');
+  initSky(); updateChips(); bindUI();
+  if (qs.has('layout')) layoutDebug();
+  if (qs.has('audiotest')) audioTest();
+  if (qs.has('autotest')) autotest();
+  else if (qs.has('smoke')) smoke();
+  else if (qs.has('preview')) preview(qs.get('preview'));
+  else {
+    show('home');
+    if (S.gems.length) $('homeTip').textContent = `已收集 ${S.gems.length} / 60 颗汉字宝石 · 继续加油！`;
+  }
+}
+boot();
 </script>
 </body>
 </html>

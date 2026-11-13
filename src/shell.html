@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#2a3b7d">
+<title>小羊上山 · 汉字山能量大冒险</title>
+<style>/*CSS*/</style>
+</head>
+<body>
+<!-- ===== 可复用的手绘角色 ===== -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="ic-sheep" viewBox="0 0 200 200">
+      <!-- 披风 -->
+      <path d="M46 118 Q100 98 154 118 L168 172 Q100 190 32 172 Z" fill="#ef5d57"/>
+      <path d="M46 118 Q100 98 154 118 L158 132 Q100 114 42 132 Z" fill="#ff7c6b"/>
+      <!-- 身体云朵 -->
+      <g fill="#fffdf5" stroke="#e6dcc4" stroke-width="3">
+        <circle cx="66" cy="118" r="27"/><circle cx="100" cy="106" r="33"/>
+        <circle cx="136" cy="118" r="27"/><circle cx="82" cy="140" r="25"/><circle cx="120" cy="140" r="25"/>
+      </g>
+      <!-- 腿 -->
+      <rect x="74" y="158" width="13" height="26" rx="6" fill="#4a3b35"/>
+      <rect x="114" y="158" width="13" height="26" rx="6" fill="#4a3b35"/>
+      <!-- 脸 -->
+      <ellipse cx="100" cy="94" rx="36" ry="38" fill="#f6e3c8" stroke="#d9b98f" stroke-width="3"/>
+      <!-- 耳朵 -->
+      <ellipse cx="62" cy="86" rx="16" ry="10" fill="#f6e3c8" stroke="#d9b98f" stroke-width="3" transform="rotate(-18 62 86)"/>
+      <ellipse cx="138" cy="86" rx="16" ry="10" fill="#f6e3c8" stroke="#d9b98f" stroke-width="3" transform="rotate(18 138 86)"/>
+      <!-- 卷毛 -->
+      <g fill="#fffdf5" stroke="#e6dcc4" stroke-width="2.5">
+        <circle cx="76" cy="60" r="14"/><circle cx="100" cy="53" r="16"/><circle cx="124" cy="60" r="14"/>
+      </g>
+      <!-- 眼睛 -->
+      <ellipse cx="87" cy="94" rx="5" ry="7" fill="#2e2a3a"/><ellipse cx="113" cy="94" rx="5" ry="7" fill="#2e2a3a"/>
+      <circle cx="89" cy="91" r="2" fill="#fff"/><circle cx="115" cy="91" r="2" fill="#fff"/>
+      <!-- 腮红 + 嘴 -->
+      <ellipse cx="74" cy="106" rx="7" ry="4" fill="#ffb3a7" opacity=".8"/>
+      <ellipse cx="126" cy="106" rx="7" ry="4" fill="#ffb3a7" opacity=".8"/>
+      <path d="M93 110 Q100 117 107 110" stroke="#8d5e4a" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <!-- 探险帽 -->
+      <path d="M58 60 Q100 24 142 60 Z" fill="#f2b434" stroke="#c8891c" stroke-width="3"/>
+      <path d="M50 60 Q100 68 150 60 Q100 76 50 60 Z" fill="#ffd25e" stroke="#c8891c" stroke-width="3"/>
+      <rect x="76" y="48" width="48" height="8" rx="4" fill="#c8891c"/>
+    </symbol>
+    <symbol id="ic-villain" viewBox="0 0 120 120">
+      <path d="M24 34 L14 8 L44 26 Z" fill="#7a4fd0" stroke="#fff" stroke-width="4" stroke-linejoin="round"/>
+      <path d="M96 34 L106 8 L76 26 Z" fill="#7a4fd0" stroke="#fff" stroke-width="4" stroke-linejoin="round"/>
+      <ellipse cx="60" cy="66" rx="46" ry="42" fill="#9a6cf0" stroke="#fff" stroke-width="4"/>
+      <path d="M18 84 Q30 74 40 84 Q50 74 60 84 Q70 74 80 84 Q90 74 102 84" fill="#7a4fd0" opacity=".7"/>
+      <ellipse cx="43" cy="58" rx="12" ry="14" fill="#fff"/><ellipse cx="77" cy="58" rx="12" ry="14" fill="#fff"/>
+      <circle cx="46" cy="61" r="6" fill="#2b2150"/><circle cx="74" cy="61" r="6" fill="#2b2150"/>
+      <path d="M48 86 Q60 78 72 86" stroke="#2b2150" stroke-width="4" fill="none" stroke-linecap="round"/>
+    </symbol>
+    <symbol id="ic-gem" viewBox="0 0 60 66">
+      <polygon points="30,2 56,17 56,48 30,64 4,48 4,17" fill="#6aa8ff" stroke="#fff" stroke-width="3"/>
+      <polygon points="30,2 56,17 30,30 4,17" fill="#a5d8ff"/>
+      <polygon points="30,30 56,17 56,48 30,64" fill="#4a7fe0"/>
+      <polygon points="30,30 4,17 4,48 30,64" fill="#7b6ce0"/>
+      <polygon points="30,2 30,30 4,17" fill="#d8ecff"/>
+    </symbol>
+    <symbol id="ic-medal" viewBox="0 0 160 160">
+      <path d="M40 8 L62 78 L20 78 Z" fill="#ef5d57"/><path d="M120 8 L140 78 L98 78 Z" fill="#4a90e2"/>
+      <circle cx="80" cy="102" r="52" fill="#ffcb4b" stroke="#e09a20" stroke-width="6"/>
+      <circle cx="80" cy="102" r="40" fill="#fff2c4" stroke="#e8b64a" stroke-width="4"/>
+      <text x="80" y="120" text-anchor="middle" font-size="46" font-weight="900" fill="#d98a1c" font-family="KaiTi,serif">★</text>
+    </symbol>
+    <symbol id="ic-grid" viewBox="0 0 100 100">
+      <rect x="2" y="2" width="96" height="96" fill="none" stroke="#e0a35a" stroke-width="2"/>
+      <path d="M50 2 V98 M2 50 H98 M2 2 L98 98 M98 2 L2 98" stroke="#e8bd85" stroke-width="1.2" stroke-dasharray="5 4"/>
+    </symbol>
+  </defs>
+</svg>
+
+<div id="stars-bg"></div>
+<svg class="mtn" viewBox="0 0 1440 260" preserveAspectRatio="none" aria-hidden="true">
+  <path d="M0 190 L160 88 L280 168 L430 52 L580 178 L740 96 L900 186 L1060 70 L1210 172 L1330 108 L1440 180 L1440 260 L0 260Z" fill="#2f6b74" opacity=".55"/>
+  <path d="M0 226 L180 150 L340 214 L520 132 L700 222 L880 148 L1060 226 L1240 158 L1440 220 L1440 260 L0 260Z" fill="#1f5360" opacity=".7"/>
+</svg>
+<div class="cloud" style="top:14%;font-size:42px;animation-delay:0s">☁️</div>
+<div class="cloud" style="top:31%;font-size:28px;animation-delay:-9s">☁️</div>
+<div class="cloud" style="top:8%;font-size:32px;animation-delay:-17s">☁️</div>
+
+<div id="app">
+  <div class="frame">
+    <!-- 顶栏 -->
+    <div class="topbar">
+      <span class="logo-mark">🐑</span>
+      <div class="top-title">小羊上山<small>汉字山能量大冒险</small></div>
+      <div class="spacer"></div>
+      <div class="chip gold" id="gemChip">💎 0 / 60</div>
+      <div class="chip" id="starChip">⭐ 0</div>
+      <button class="icon-btn" id="muteBtn" title="音效开关">🔊</button>
+      <button class="icon-btn" id="dexBtn" title="汉字宝石图鉴">📖</button>
+      <button class="icon-btn" id="homeBtn" title="回到首页">🏠</button>
+    </div>
+
+    <!-- 首页 -->
+    <div class="screen on" id="scr-home">
+      <div class="home-wrap">
+        <div class="home-panel">
+          <div class="home-sub">汉 字 山 大 冒 险</div>
+          <div class="home-title">小羊上山</div>
+          <div class="home-scene">
+            <svg class="hero-sheep"><use href="#ic-sheep"/></svg>
+            <svg class="hero-villain"><use href="#ic-villain"/></svg>
+            <svg class="hero-gem" style="left:16%;top:26%"><use href="#ic-gem"/></svg>
+            <svg class="hero-gem" style="right:20%;top:8%;width:28px;animation-delay:-1.6s"><use href="#ic-gem"/></svg>
+            <div class="home-ground"></div>
+          </div>
+          <div class="home-btns">
+            <button class="btn" id="startBtn">🚩 开始冒险</button>
+            <button class="btn blue" id="dexHomeBtn">💎 我的宝石</button>
+          </div>
+          <div class="home-tip" id="homeTip">依据《小羊上山》第 1 级 60 字编排 · 建议家长陪玩</div>
+        </div>
+        <button class="btn ghost small" id="parentBtn" style="margin-top:12px">👨‍👩‍👦 给家长的话</button>
+      </div>
+    </div>
+
+    <!-- 登山地图 -->
+    <div class="screen" id="scr-map">
+      <h2 class="big">🗺️ 汉字山登山地图</h2>
+      <p class="sub">点亮 60 颗汉字宝石，登上山顶宝库！点一个站点出发～</p>
+      <div class="map-wrap" id="mapWrap">
+        <svg class="map-path" viewBox="0 0 800 460" preserveAspectRatio="none">
+          <path d="M70 400 Q150 330 230 370 T400 300 Q480 250 560 290 Q640 330 720 210 Q760 150 720 70"
+                fill="none" stroke="#e6b34c" stroke-width="12" stroke-linecap="round" stroke-dasharray="2 26" opacity=".85"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- 剧情 -->
+    <div class="screen" id="scr-story">
+      <h2 class="big" id="storyTitle">第 1 站 · 起跑坡</h2>
+      <div class="story-box" style="margin-top:auto">
+        <svg width="130" height="130" style="flex:0 0 130px"><use href="#ic-sheep"/></svg>
+        <div>
+          <div class="speech" id="storySpeech"></div>
+          <div class="story-villain" id="storyVillain"></div>
+        </div>
+        <svg width="86" height="86" style="flex:0 0 86px"><use href="#ic-villain"/></svg>
+      </div>
+      <div class="mission" id="storyMission"></div>
+      <button class="btn green" id="storyGo" style="margin-bottom:auto">🚩 出发！</button>
+    </div>
+
+    <!-- 认字 -->
+    <div class="screen" id="scr-learn">
+      <div class="game-head">
+        <div class="game-title" id="learnTitle">认一认</div>
+        <div class="hint" id="learnHint">看图 → 听音 → 描一描</div>
+      </div>
+      <div class="progress-dots" id="learnDots"></div>
+      <div class="learn-wrap">
+        <div class="learn-main">
+          <div class="char-card" id="charCard">
+            <svg class="grid-bg"><use href="#ic-grid"/></svg>
+            <div class="speaker">🔊</div>
+            <div class="big-char" id="bigChar">山</div>
+            <div class="char-pinyin" id="charPinyin">点一下，听小羊读</div>
+          </div>
+          <div class="side-card">
+            <div class="pic-card">
+              <div class="pic-emoji" id="picEmoji">🏔️</div>
+              <div class="pic-hint" id="picHint"></div>
+            </div>
+            <div class="word-card">
+              <div class="word-label">找朋友 · 组个词（点一下听）</div>
+              <div class="word-list" id="wordList"></div>
+            </div>
+            <div class="trace-card">
+              <div class="trace-tip" id="traceTip">✏️ 用手指在格子里描一描</div>
+              <div class="trace-wrap" id="traceWrap">
+                <div class="trace-char" id="traceChar">山</div>
+                <canvas id="traceCanvas" width="300" height="300"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="row" style="margin-top:6px">
+          <button class="btn ghost small" id="learnBack">↩ 再听一遍</button>
+          <button class="btn blue" id="learnNext">下一个字 →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 小游戏 -->
+    <div class="screen" id="scr-game">
+      <div class="game-head">
+        <div class="game-title" id="gameTitle">抢汉字宝石</div>
+        <div class="combo" id="comboChip">🔥 连击 ×0</div>
+      </div>
+      <div class="progress-dots" id="gameDots"></div>
+      <p class="sub" id="gameTip"></p>
+      <div id="gameArea" style="width:100%;flex:1;display:flex;flex-direction:column;justify-content:center"></div>
+      <div class="msg" id="gameMsg"></div>
+    </div>
+
+    <!-- 绘本阅读 -->
+    <div class="screen" id="scr-read">
+      <h2 class="big" id="readTitle">📖 我自己读</h2>
+      <p class="sub">点每个字能听发音 · 点一整句听小羊读一遍</p>
+      <div class="book">
+        <div class="book-title" id="bookTitle"></div>
+        <div class="book-lines" id="bookLines"></div>
+        <div class="book-foot" id="bookFoot">✨ 这些字你都认识啦，自己读一遍吧！</div>
+      </div>
+      <button class="btn green" id="readDone" style="margin-top:12px">🏅 我读完啦！</button>
+    </div>
+
+    <!-- 结算 -->
+    <div class="screen" id="scr-award">
+      <div class="award-wrap">
+        <svg class="medal"><use href="#ic-medal"/></svg>
+        <div class="award-title" id="awardTitle">太厉害啦！</div>
+        <div class="award-row" id="awardGems"></div>
+        <canvas id="certCanvas" width="1000" height="660"></canvas>
+        <div class="row" style="margin-top:6px">
+          <button class="btn ghost small" id="certDown">⬇️ 保存奖状</button>
+          <button class="btn" id="awardNext">下一站 →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 图鉴 -->
+    <div class="screen" id="scr-dex">
+      <h2 class="big">💎 汉字宝石图鉴</h2>
+      <p class="sub" id="dexSub">点亮的宝石可以点一下听发音</p>
+      <div class="dex-grid" id="dexGrid"></div>
+      <div class="row" style="margin-top:12px">
+        <button class="btn ghost small" id="dexBack">↩ 返回</button>
+        <button class="btn ghost small" id="resetBtn">🔄 重新开始</button>
+      </div>
+    </div>
+
+    <!-- 家长说明 -->
+    <div class="screen" id="scr-parent">
+      <h2 class="big">👨‍👩‍👦 给家长的话</h2>
+      <div class="parent-note" id="parentNote"></div>
+      <button class="btn ghost" id="parentBack" style="margin-top:16px">↩ 返回</button>
+    </div>
+  </div>
+</div>
+<div id="testOut" style="display:none"></div>
+<script>/*JS*/</script>
+</body>
+</html>
