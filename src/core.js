@@ -190,6 +190,8 @@ function updateChips() {
 }
 function show(name) {
   if (name !== 'echo' && F.recording >= 0) stopRec();
+  /* 切屏时把还在念的语音掐掉，免得上一屏的话跟着跑到新一屏 */
+  try { if ('speechSynthesis' in window) speechSynthesis.cancel(); } catch (e) {}
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('on'));
   $('scr-' + name).classList.add('on');
   SFX.page();
@@ -197,7 +199,7 @@ function show(name) {
 
 /* ---------------- 流程状态 ---------------- */
 let F = {book: 0, stage: 'home', learnIdx: 0, learnChars: [], pool: [], recent: [],
-         games: [], gi: 0, q: 0, combo: 0, traced: false, locked: false,
+         games: [], gi: 0, q: 0, combo: 0, traced: false, locked: false, navLock: false,
          echo: null, recording: -1, reading: false, echoSkipped: false};
 function learnedChars(bookIdx) {
   const all = [];
@@ -387,6 +389,7 @@ function playDemo() {
 
 function setupTrace() {
   const cv = $('traceCanvas'), ctx = cv.getContext('2d');
+  F.traced = false;                    /* 换字或擦掉重来时，描红进度一并复位 */
   ctx.clearRect(0, 0, 300, 300);
   ctx.strokeStyle = 'rgba(225,165,95,.38)'; ctx.lineWidth = 2; ctx.setLineDash([6, 5]);
   [[150, 0, 150, 300], [0, 150, 300, 150], [0, 0, 300, 300], [300, 0, 0, 300]].forEach(l => {
@@ -404,7 +407,7 @@ function setupTrace() {
     clearGuide();
   }
   const cells = new Set();
-  let drawing = false, last = null, done = false;
+  let drawing = false, last = null, done = false, pathLen = 0;
   const pos = e => {
     const r = cv.getBoundingClientRect();
     return {x: (e.clientX - r.left) / r.width * 300, y: (e.clientY - r.top) / r.height * 300};
@@ -417,11 +420,16 @@ function setupTrace() {
     ctx.lineCap = 'round'; ctx.lineJoin = 'round';
     ctx.beginPath(); ctx.moveTo(last ? last.x : p.x, last ? last.y : p.y); ctx.lineTo(p.x, p.y); ctx.stroke();
     cells.add(`${Math.floor(p.x / 37.5)},${Math.floor(p.y / 37.5)}`);
+    if (last) pathLen += Math.hypot(p.x - last.x, p.y - last.y);
     last = p;
-    if (cells.size >= 12 && !done) {
+    /* 描够面积或描够长度都算完成：「一」这种只有一横的字整条画过也只覆盖 7 格 */
+    if ((cells.size >= 6 || pathLen >= 420) && !done) {
       done = true; F.traced = true;
       SFX.right(); floatText('描得真棒！⭐', innerWidth / 2, innerHeight * .6, '#ffe06a');
-      $('traceTip').textContent = '✅ 描完啦！你真棒';
+      $('traceTip').textContent = '✅ 描完啦！点下面的「下一个字 →」继续';
+      const nx = $('learnNext');
+      nx.classList.add('glow');
+      setTimeout(() => nx.classList.remove('glow'), 1800);
     }
   };
   cv.onpointerdown = e => { unlockAudio(); drawing = true; last = pos(e); cv.setPointerCapture(e.pointerId); };
@@ -459,17 +467,27 @@ function renderRead() {
     box.appendChild(row);
   });
   $('bookFoot').textContent = '✨ 这些字你都认识啦，自己读一遍，再去跟读全文！';
+  /* 能用麦克风的设备上，把“跳过”说得明白点，避免孩子以为跳过也算读完 */
+  const canRec = F.micOK === undefined ? (recSupported() && !FAST) : F.micOK;
+  $('readDone').textContent = canRec ? '跳过跟读（不拿徽章）' : '先不跟读，直接领奖';
 }
 
 /* ---------------- 跟读全文（示范 → 录音 → 回放 → 打卡） ---------------- */
-const REC = {stream: null, rec: null, chunks: [], line: -1};
+const REC = {stream: null, rec: null, chunks: [], line: -1, starting: false};
 /* 本机是否支持录音（有麦克风 API + MediaRecorder）。不支持时走降级通道 */
 function recSupported() { return !!(navigator.mediaDevices && window.MediaRecorder); }
+/* 关掉麦克风轨道，避免「重复点我来读」时留下一直亮着的麦克风 */
+function killStream() {
+  if (REC.stream) { try { REC.stream.getTracks().forEach(t => t.stop()); } catch (e) {} REC.stream = null; }
+}
 function echoInit() {
   const n = BOOKS[F.book].story.length;
-  if (!F.echo) F.echo = {checked: Array(n).fill(false), audio: Array(n).fill(null)};
-  F.recording = -1;
-  F.micOK = recSupported();          /* 默认按“支持”处理，被拒/不可用会在 startRec 里改回 false */
+  /* 只在新建跟读状态时初始化麦克风判定：renderEcho 会反复调用 echoInit，
+     若每次都重置 F.micOK，startRec 里“被拒后降级”的赋值会被立刻覆盖掉 */
+  if (!F.echo) {
+    F.echo = {checked: Array(n).fill(false), audio: Array(n).fill(null)};
+    F.micOK = recSupported() && !FAST;
+  }
 }
 function echoMsg(t) { $('echoTip').textContent = t; }
 function markLine(i, fromRec) {
@@ -481,31 +499,50 @@ function markLine(i, fromRec) {
 }
 async function startRec(i) {
   if (F.recording >= 0) return stopRec();
+  if (REC.starting) { echoMsg('正在打开麦克风，稍等一下再点～'); return; }
   if (!navigator.mediaDevices || !window.MediaRecorder) {
     F.micOK = false; renderEcho();           /* 不支持录音：开放降级通道，不卡住 */
     echoMsg('这台设备不支持录音，点「✅ 读好啦」一样能过关哦～'); return;
   }
+  const bookAtStart = F.book;
+  REC.starting = true;
   try {
-    REC.stream = await navigator.mediaDevices.getUserMedia({audio: true});
-    REC.chunks = []; REC.line = i;
-    REC.rec = new MediaRecorder(REC.stream);
-    REC.rec.ondataavailable = e => { if (e.data && e.data.size) REC.chunks.push(e.data); };
-    REC.rec.onstop = () => {
-      try {
-        const blob = new Blob(REC.chunks, {type: REC.rec.mimeType || 'audio/webm'});
-        if (blob.size) F.echo.audio[i] = URL.createObjectURL(blob);
-      } catch (e) {}
-      if (REC.stream) { REC.stream.getTracks().forEach(t => t.stop()); REC.stream = null; }
-      F.recording = -1; markLine(i, true); renderEcho();
+    killStream();                            /* 清掉可能残留的上一路麦克风 */
+    const stream = await navigator.mediaDevices.getUserMedia({audio: true});
+    /* 等权限期间孩子可能已经切屏/退出，不能在后台偷偷开麦 */
+    if (F.stage !== 'echo' || F.book !== bookAtStart) {
+      stream.getTracks().forEach(t => t.stop()); return;
+    }
+    REC.stream = stream; REC.chunks = []; REC.line = i;
+    const rec = new MediaRecorder(stream);
+    REC.rec = rec;
+    rec.ondataavailable = e => { if (e.data && e.data.size) REC.chunks.push(e.data); };
+    rec.onstop = () => {
+      const chunks = REC.chunks; REC.chunks = [];
+      let blob = null;
+      try { blob = new Blob(chunks, {type: rec.mimeType || 'audio/webm'}); } catch (e) {}
+      killStream();
+      F.recording = -1;
+      if (F.book !== bookAtStart) return;               /* 期间已换书，丢弃这次录音 */
+      if (blob && blob.size > 64) {                     /* 真录到声音才打卡 */
+        F.echo.audio[i] = URL.createObjectURL(blob);
+        markLine(i, true);
+        renderEcho();
+      } else {                                          /* 空录音不打卡，否则会显示“读过啦”却没音频 */
+        renderEcho();
+        echoMsg('这次好像没录到声音～再点「🎤 我来读」大声读一次吧');
+      }
     };
-    REC.rec.start();
+    rec.start();
     F.recording = i; SFX.rec(); renderEcho();
     echoMsg('🎤 正在录音……大声读这一句，读完点「⏹ 停一停」');
     setTimeout(() => { if (F.recording === i) stopRec(); }, 9000);
   } catch (e) {
     F.micOK = false; renderEcho();           /* 麦克风被拒/不可用：开放降级通道 */
     echoMsg('麦克风没打开（可以点「✅ 读好啦」自己读，也一样棒！）');
-    if (REC.stream) { REC.stream.getTracks().forEach(t => t.stop()); REC.stream = null; }
+    killStream();
+  } finally {
+    REC.starting = false;
   }
 }
 function stopRec() {
@@ -517,12 +554,15 @@ function playMyVoice(i) {
   const a = new Audio(url); a.play().catch(() => {});
   echoMsg('▶ 听听自己的声音，是不是很棒？');
 }
+/* echoTok：点单句会打断「听整本」的连读队列，避免两路语音抢着念 */
+let echoTok = 0;
 async function echoReadAll() {
   if (F.reading) return;
   F.reading = true;
+  const tok = ++echoTok;
   const lines = BOOKS[F.book].story;
   for (let i = 0; i < lines.length; i++) {
-    if (F.stage !== 'echo') break;
+    if (echoTok !== tok || F.stage !== 'echo') break;
     document.querySelectorAll('.echo-line').forEach((el, j) => el.classList.toggle('playing', j === i));
     echoMsg(`🔊 小羊读第 ${i + 1} 句：${lines[i]}`);
     await speakSentence(lines[i]);
@@ -530,7 +570,13 @@ async function echoReadAll() {
   }
   document.querySelectorAll('.echo-line').forEach(el => el.classList.remove('playing'));
   F.reading = false;
-  echoMsg('✨ 听完啦！现在一句一句跟着读吧～');
+  if (echoTok === tok) echoMsg('✨ 听完啦！现在一句一句跟着读吧～');
+}
+/* 跳过跟读：麦克风可用时必须二次确认，避免孩子误点一步就把录音关绕过去 */
+function skipEcho() {
+  const canRec = F.micOK === undefined ? (recSupported() && !FAST) : F.micOK;
+  if (canRec && !confirm('还没有录音哦～现在跳过，这一册就拿不到「🎤 朗读小达人」徽章啦。\n确定要跳过吗？')) return;
+  F.echoSkipped = true; goAward();
 }
 function renderEcho() {
   echoInit();
@@ -559,7 +605,7 @@ function renderEcho() {
     btn.onclick = () => {
       const i = +btn.dataset.i, act = btn.dataset.act;
       unlockAudio(); SFX.tap();
-      if (act === 'listen') { echoMsg('🔊 听：' + lines[i]); speakSentence(lines[i]); }
+      if (act === 'listen') { echoTok++; echoMsg('🔊 听：' + lines[i]); speakSentence(lines[i]); }
       else if (act === 'rec') startRec(i);
       else if (act === 'play') playMyVoice(i);
       else if (act === 'ok') {
@@ -573,6 +619,7 @@ function renderEcho() {
     };
   });
   $('echoDone').textContent = done >= lines.length ? '🏅 全部读完，领奖状！' : `🏅 我全读完啦（${done}/${lines.length}）`;
+  $('echoSkip').textContent = F.micOK === false ? '先不跟读' : '跳过跟读（不拿徽章）';
 }
 
 /* ---------------- 通关结算 & 奖状 ---------------- */
@@ -621,6 +668,20 @@ function drawCert() {
   g.fillStyle = '#9a8a68'; g.font = '20px "Microsoft YaHei",sans-serif';
   g.fillText(new Date().toLocaleDateString('zh-CN') + '　小羊上山 · 汉字山能量大冒险', 500, 590);
 }
+/* 奖状放大：手机上奖状被压到 300px 宽，字几乎看不清，点一下全屏看 */
+function showCertZoom(url) {
+  let box = $('certZoom');
+  if (!box) {
+    box = document.createElement('div');
+    box.id = 'certZoom'; box.className = 'cert-zoom';
+    box.innerHTML = '<img alt="奖状"><div class="hint">点一下关闭 · 长按图片可保存 · 横过手机看更清楚</div>';
+    document.body.appendChild(box);
+    box.onclick = () => { box.classList.remove('on'); SFX.tap(); };
+  }
+  box.querySelector('img').src = url || $('certCanvas').toDataURL('image/png');
+  box.classList.add('on');
+  SFX.tap();
+}
 
 /* ---------------- 图鉴 / 家长 ---------------- */
 function renderDex() {
@@ -645,11 +706,15 @@ function renderParent() {
     词语和绘本短句<b>只使用本级及之前学过的字</b>——这是分级读物最核心的编写原则。
     个别整理表缺字用同级高频常用字补齐；<b>绘本为配合游戏的原创改写，不是原书全文</b>。<br><br>
     <b>一关怎么玩（约 6 分钟）</b><br>
-    ① <b>认字</b>：图画变汉字 → 发音 → 组词 → 手指描红（不考笔顺，重在参与）<br>
+    ① <b>认字</b>：图画变汉字 → 发音 → 组词 → 田字格描红（按标准笔顺标了 ①②③ 起笔编号和方向箭头，
+    可点「🖌️ 看示范」逐笔演示，描坏了能「🧽 擦掉重写」）<br>
     ② <b>玩 2 个小游戏</b>：抢宝石 / 敲迷雾怪 / 谁不见了 / 对对碰 / 词语拼拼乐，逐关轮换<br>
     ③ <b>自己读</b>：点单字听发音，点整句听小羊朗读<br>
     ④ <b>🎤 跟读全文</b>：逐句听示范 → 按「我来读」录下孩子的声音 → 回放给自己听 → 逐句打卡。
-    也能一键「听整本」连续朗读。麦克风没打开也没关系，点「✅ 读好啦」或「先不跟读」同样能过关。<br><br>
+    也能一键「听整本」连续朗读。<br>
+    <b>录音规则</b>：设备能用麦克风时，<b>必须每句都真的录过音</b>才能点亮星星、领「🎤 朗读小达人」徽章；
+    没录音就点「领奖状」会被拦下并提示还差几句。想跳过要点「跳过跟读」并二次确认，且这一册拿不到徽章。
+    麦克风不可用或被拒绝时，自动改成点「✅ 读好啦」打卡，不会把孩子卡住。<br><br>
     <b>发音说明</b><br>
     有真人录音的 <b>${v.mp3} / ${v.total}</b> 个字用仓库自带的 MP3（离线也能听），
     其余字用<b>浏览器中文语音</b>朗读${v.tts ? '（本机已检测到中文语音 ✅）' : '（本机暂未检测到中文语音，建议用 Chrome / Edge 打开）'}。
@@ -676,16 +741,31 @@ function bindUI() {
   $('levelBack').onclick = () => show('home');
   $('mapBack').onclick = () => goLevels();
   $('storyGo').onclick = () => { unlockAudio(); SFX.tap(); goLearn(); };
-  $('learnBack').onclick = () => { renderLearn(); };
+  /* 「再听一遍」只重播发音：以前是整页重渲染，会把孩子已经描好的笔迹一起清掉 */
+  $('learnBack').onclick = () => {
+    unlockAudio(); SFX.tap();
+    const c = F.learnChars[F.learnIdx];
+    speakChar(c);
+    floatText('🔊 ' + c, innerWidth / 2, innerHeight * .42, '#ffe06a');
+  };
+  $('traceClear').onclick = () => {
+    unlockAudio(); SFX.whoosh();
+    setupTrace();                        /* 重画田字格与笔顺引导，同时复位描红进度 */
+    $('traceTip').textContent = '🧽 擦干净啦，照箭头再描一次吧';
+  };
   $('learnNext').onclick = () => {
+    if (F.navLock) return;               /* 防止小朋友连点，一下子跳过好几个字 */
+    F.navLock = true;
     SFX.tap();
     if (F.traced) { S.stars += 1; save(); updateChips(); }
+    F.traced = false;                    /* 消费掉，连点也不会重复算星 */
     F.learnIdx++;
     if (F.learnIdx >= F.learnChars.length) goGame(); else renderLearn();
+    setTimeout(() => { F.navLock = false; }, 320);
   };
   $('traceDemo').onclick = () => { unlockAudio(); SFX.tap(); playDemo(); };
   $('readEcho').onclick = () => { unlockAudio(); goEcho(); };
-  $('readDone').onclick = () => { unlockAudio(); F.echoSkipped = true; goAward(); };
+  $('readDone').onclick = () => { unlockAudio(); skipEcho(); };
   $('echoBack').onclick = () => goRead();
   $('echoAll').onclick = () => { unlockAudio(); echoReadAll(); };
   $('echoDone').onclick = () => {
@@ -699,12 +779,23 @@ function bindUI() {
     if (F.echo) { F.echo.checked = F.echo.checked.map(() => true); }
     goAward();
   };
-  $('echoSkip').onclick = () => { F.echoSkipped = true; goAward(); };
+  $('echoSkip').onclick = () => { unlockAudio(); skipEcho(); };
   $('certDown').onclick = () => {
+    const url = $('certCanvas').toDataURL('image/png');
+    const iOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
+      || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    SFX.tap();
+    if (iOS) {                       /* iOS 不支持 a[download]，改成放大查看让家长长按保存 */
+      showCertZoom(url);
+      floatText('长按图片就能保存 📷', innerWidth / 2, innerHeight * .18, '#ffe6a8');
+      return;
+    }
     const a = document.createElement('a');
     a.download = `小羊上山-第${S.level}级-第${F.book + 1}册奖状.png`;
-    a.href = $('certCanvas').toDataURL('image/png'); a.click(); SFX.tap();
+    a.href = url; a.click();
   };
+  $('certCanvas').onclick = () => showCertZoom();
+  $('certCanvas').style.cursor = 'zoom-in';
   $('awardNext').onclick = () => {
     if (F.book === BOOKS.length - 1) {
       goLevels();
@@ -713,6 +804,9 @@ function bindUI() {
   };
   $('resetBtn').onclick = () => {
     if (!confirm('确定清空所有级别的全部进度，从头开始吗？')) return;
-    S = normalize({...DEFAULT, prog: {}}); save(); updateChips(); renderDex(); SFX.page();
+    S = normalize({...DEFAULT, prog: {}}); setLevel(1); save();
+    /* 存档清空后把当前关卡状态也复位，避免还挂在旧级别/旧书上 */
+    F.book = 0; F.echo = null; F.recording = -1; F.micOK = undefined; F.learnIdx = 0;
+    updateChips(); renderDex(); SFX.page();
   };
 }

@@ -3,6 +3,8 @@
    ===================================================================== */
 const QCOUNT = {gem: 5, whack: 5, missing: 4, match: 1, build: 5};
 const PRAISE = ['太棒了！', '好厉害！', '答对啦！', '超级棒！', '你真神！', '完全正确！'];
+/* 每次渲染题目自增；延时回调里比对令牌，避免上一题的定时器把新题的界面改掉 */
+let RTOK = 0;
 
 /* 高年级累计字表很大，出题优先用最近学过的字，避免一上来考 300 字前的冷门字 */
 const GP = () => (F.recent && F.recent.length >= 6) ? F.recent : F.pool;
@@ -29,7 +31,9 @@ function onRight(el) {
   if (F.combo >= 3) SFX.combo();
   const type = F.games[F.gi];
   F.q++;
+  const tok = RTOK;
   setTimeout(() => {
+    if (RTOK !== tok) return;          /* 题目已经换了（退出/重开），别再往下翻 */
     if (F.q >= QCOUNT[type]) gameDone(); else renderGame();
   }, FX(800));
 }
@@ -46,6 +50,7 @@ function gameDone() {
   else renderGame();
 }
 function renderGame() {
+  RTOK++;
   F.locked = false;
   const type = F.games[F.gi];
   const g = GAMES[type];
@@ -64,7 +69,8 @@ function listenBlock(correct, label) {
 function bindListen(correct) {
   const b = $('bigListen');
   if (b) b.onclick = () => { unlockAudio(); SFX.tap(); b.classList.add('playing'); speakChar(correct).then(() => b.classList.remove('playing')); };
-  setTimeout(() => { if (F.stage === 'game') speakChar(correct); }, FX(320));
+  const tok = RTOK;
+  setTimeout(() => { if (RTOK === tok && F.stage === 'game') speakChar(correct); }, FX(320));
 }
 
 /* ---------- ① 抢汉字宝石：听音选字 ---------- */
@@ -119,7 +125,9 @@ function renderMissing() {
         `<div class="tile" data-val="${c}">${c}</div>`).join('')}</div>
     </div>`;
   const row = $('memRow');
+  const tok = RTOK;
   const reveal = () => {
+    if (RTOK !== tok) return;            /* 已经换题/退出，别往新题里写旧字 */
     row.querySelectorAll('.mem-card').forEach(el => {
       const gone = el.dataset.c === hidden;
       el.classList.toggle('covered', gone);
@@ -132,12 +140,12 @@ function renderMissing() {
     speakChar(hidden);
   };
   setTimeout(() => {
-    if (F.stage !== 'game') return;
+    if (RTOK !== tok || F.stage !== 'game') return;
     row.querySelectorAll('.mem-card').forEach(el => el.classList.add('covered'));
     setTimeout(reveal, FX(500));
   }, FX(2300));
   // 展示阶段逐字读一遍
-  cards.forEach((c, i) => setTimeout(() => { if (F.stage === 'game') speakChar(c); }, FX(260 + i * 430)));
+  cards.forEach((c, i) => setTimeout(() => { if (RTOK === tok && F.stage === 'game') speakChar(c); }, FX(260 + i * 430)));
 }
 
 /* ---------- ④ 汉字对对碰：字 ↔ 图画翻牌 ---------- */
@@ -153,6 +161,7 @@ function renderMatch() {
     <div class="match-grid" id="matchGrid">${cards.map((x, i) =>
       `<div class="match-card" data-idx="${i}" data-k="${x.k}" data-t="${x.t}"><span style="opacity:.5">?</span></div>`).join('')}</div>`;
   let first = null, matched = 0, lock = false;
+  const tok = RTOK;
   $('matchGrid').querySelectorAll('.match-card').forEach(el => {
     el.onclick = () => {
       if (lock || el.classList.contains('flip') || el.classList.contains('matched')) return;
@@ -167,7 +176,7 @@ function renderMatch() {
         SFX.gem(); speakChar(x.k);
         if (matched === chars.length) {
           $('gameMsg').textContent = '🎉 全部配对成功！';
-          setTimeout(() => onRight(null), FX(700));
+          setTimeout(() => { if (RTOK === tok) onRight(null); }, FX(700));
         }
       } else {
         lock = true; SFX.wrong();
@@ -221,7 +230,8 @@ function renderBuild() {
     };
   });
   $('bigListen').onclick = () => { unlockAudio(); SFX.tap(); speakWord(word); };
-  setTimeout(() => { if (F.stage === 'game') speakWord(word); }, FX(420));
+  const tok = RTOK;
+  setTimeout(() => { if (RTOK === tok && F.stage === 'game') speakWord(word); }, FX(420));
 }
 
 /* ---------------- 自动化测试接口（不影响正常游玩） ---------------- */

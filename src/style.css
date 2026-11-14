@@ -158,6 +158,14 @@ p.sub{font-size:14px;color:#7a6b4d;text-align:center;line-height:1.7;margin-bott
 .trace-char.hide{display:none}
 .trace-tip{font-size:12px;color:#9a7b3e;font-weight:800}
 .trace-card .btn.tiny{margin:8px auto 0;display:block;font-size:14px;padding:7px 18px}
+.trace-btns{display:flex;gap:6px;justify-content:center;align-items:center;margin-top:8px;flex-wrap:wrap}
+.trace-btns .btn.tiny{margin:0;font-size:12px;padding:6px 10px}
+/* 描完后轻推一下「下一个字」 */
+@keyframes glowPulse{
+  0%,100%{box-shadow:0 6px 0 #2a5bb8,0 0 0 0 rgba(255,208,80,.0)}
+  50%{box-shadow:0 6px 0 #2a5bb8,0 0 0 10px rgba(255,208,80,.45)}
+}
+.btn.glow{animation:glowPulse .9s ease-in-out 2}
 
 /* ---------- 小游戏通用 ---------- */
 .game-head{display:flex;align-items:center;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:4px}
@@ -268,7 +276,14 @@ p.sub{font-size:14px;color:#7a6b4d;text-align:center;line-height:1.7;margin-bott
 .gem-mini{width:34px;height:38px;clip-path:polygon(50% 0,93% 25%,93% 75%,50% 100%,7% 75%,7% 25%);
   background:linear-gradient(160deg,#8fe3ff,#4a8ff0);animation:gemIn .4s backwards}
 @keyframes gemIn{from{transform:scale(0) translateY(-30px);opacity:0}to{transform:scale(1);opacity:1}}
-#certCanvas{width:auto;height:auto;max-width:min(560px,88%);max-height:42vh;flex:0 0 auto;border-radius:14px;box-shadow:0 14px 30px rgba(0,0,0,.3)}
+#certCanvas{width:auto;height:auto;max-width:min(560px,88%);max-height:46vh;flex:0 0 auto;border-radius:14px;box-shadow:0 14px 30px rgba(0,0,0,.3);cursor:zoom-in}
+/* 奖状放大查看（手机上字太小，点一下全屏看，可长按保存） */
+.cert-zoom{position:fixed;inset:0;z-index:9000;background:rgba(12,16,32,.94);display:none;place-items:center;padding:14px}
+.cert-zoom.on{display:grid}
+.cert-zoom img{max-width:100%;max-height:86vh;border-radius:14px;background:#fffaf0;
+  box-shadow:0 18px 50px rgba(0,0,0,.55)}
+.cert-zoom .hint{position:absolute;bottom:12px;left:0;right:0;text-align:center;color:#ffe6a8;
+  font-size:13px;font-weight:800;text-shadow:0 1px 4px rgba(0,0,0,.6)}
 /* 图鉴 */
 .dex-grid{display:grid;grid-template-columns:repeat(10,1fr);gap:7px;width:min(720px,100%);margin:8px auto}
 .dex-cell{aspect-ratio:1;border-radius:12px;background:#e7dfc9;display:grid;place-items:center;
@@ -315,6 +330,7 @@ p.sub{font-size:14px;color:#7a6b4d;text-align:center;line-height:1.7;margin-bott
   .word-card{padding:6px}.word-label{font-size:10px}
   .word-pill{font-size:18px;padding:4px 9px}
   .trace-card{padding:6px}.trace-tip{font-size:11px}
+  .trace-btns .btn.tiny{font-size:11px;padding:5px 8px}
   .trace-wrap{width:104px;height:104px;margin:3px auto 0}
   .trace-wrap canvas{width:104px;height:104px}.trace-char{font-size:76px}
   .hz{font-size:26px;min-width:28px}.punc{font-size:24px}

@@ -128,7 +128,7 @@ function autotest() {
   tick();
 }
 
-/* 跟读全文关卡自检 */
+/* 跟读全文关卡自检：同时验证「没录音不能过关」和「设备不支持时的降级通道」 */
 function echotest() {
   const errs = [];
   window.addEventListener('error', e => errs.push(e.message));
@@ -139,15 +139,25 @@ function echotest() {
   const lines = BOOKS[0].story.length;
   const cards = document.querySelectorAll('.echo-line').length;
   $('echoAll').click();
+  /* ① 门控：本机能录音时，一句都没录，点「领奖状」必须被拦住 */
+  const canRec = recSupported();
+  let gated = true;
+  if (canRec) {
+    F.micOK = true;
+    $('echoDone').click();
+    gated = F.stage === 'echo' && !F.echo.checked.some(Boolean);
+  }
+  /* ② 降级通道：麦克风不可用时，逐句点「读好啦」仍能全部打卡 */
+  F.micOK = false;
   for (let i = 0; i < lines; i++) {
     const b = document.querySelector(`button.mini[data-act="ok"][data-i="${i}"]`);
     if (b) b.click();
   }
   const checked = F.echo.checked.filter(Boolean).length;
-  const rec = !!(navigator.mediaDevices && window.MediaRecorder);
-  const ok = lines === cards && checked === lines && errs.length === 0;
+  const ok = lines === cards && checked === lines && gated && errs.length === 0;
   const t = `ECHOTEST_${ok ? 'OK' : 'FAIL'} level=${lvl} lines=${lines} cards=${cards} `
-    + `checked=${checked} recorder=${rec ? 'yes' : 'no'} voice=${voiceInfo().tts ? 'zh' : 'none'} err=${errs.length} ${errs.slice(0, 2).join('|')}`;
+    + `checked=${checked} gated=${gated ? 'yes' : 'NO'} recorder=${canRec ? 'yes' : 'no'} `
+    + `voice=${voiceInfo().tts ? 'zh' : 'none'} err=${errs.length} ${errs.slice(0, 2).join('|')}`;
   document.title = t; $('testOut').textContent = t;
 }
 
