@@ -24,6 +24,7 @@ function preview(p) {
     updateChips();
     F.dexFrom = 'home'; renderDex(); show('dex');
   }
+  else if (p === 'trace') openChar(qs.get('char') || '上');
   else if (p === 'parent') { renderParent(); show('parent'); }
   else show('home');
 }
@@ -222,10 +223,92 @@ function layoutDebug() {
   }, 900);
 }
 
+/* 直接打开某个字的认字页（调试 / 截图用） */
+function openChar(ch) {
+  let lv = 1, bk = 0, found = false;
+  LEVELS.forEach(L => L.books.forEach((b, i) => {
+    if (!found && b.chars.includes(ch)) { lv = L.level; bk = i; found = true; }
+  }));
+  setLevel(lv); startBook(bk);
+  F.learnIdx = Math.max(0, F.learnChars.indexOf(ch));
+  F.stage = 'learn'; renderLearn(); show('learn');
+}
+
+/* 描红自检：验证「一笔不算完成、逐笔描完才算」以及「乱画不认」 */
+function tracetest() {
+  const errs = [];
+  window.addEventListener('error', e => errs.push(e.message));
+  const ch = qs.get('char') || '上';
+  openChar(ch);
+  const d = STROKES[ch];
+  const n = d ? d.s.length : 0;
+  const feed = pts => window.__traceFeed(pts.map(p => trXY(p)));
+  const clear = () => { $('traceClear').click(); };
+
+  /* ① 只描第 1 笔 → 不能算完成 */
+  clear();
+  if (d && d.m[0]) feed(d.m[0]);
+  const one = window.__traceInfo();
+
+  /* ② 补完剩下的笔画 → 全部完成 */
+  if (n > 1) for (let i = 1; i < n; i++) feed(d.m[i]);
+  const all = window.__traceInfo();
+
+  /* ③ 乱画（左上角随手拐几笔）→ 不能认 */
+  clear();
+  window.__traceFeed([[28, 28], [55, 36], [78, 30], [48, 52]]);
+  const junk = window.__traceInfo();
+
+  const oneOk = n <= 1 ? (one.traced && one.kept === 1) : (!one.traced && one.kept === 1);
+  /* 乱画的目标是「不能靠乱画过关」，短横点有可能落在第一个点的位置上，只看是否被判定完成 */
+  const ok = oneOk && all.traced && all.kept === n && !junk.traced && errs.length === 0;
+  const t = `TRACETEST_${ok ? 'OK' : 'FAIL'} char=${ch} strokes=${n} `
+    + `oneStrokeTraced=${one.traced ? 'YES' : 'no'} kept1=${one.kept} `
+    + `allTraced=${all.traced ? 'yes' : 'NO'} keptAll=${all.kept} `
+    + `junkTraced=${junk.traced ? 'YES' : 'no'} err=${errs.length} ${errs.slice(0, 2).join('|')}`;
+  document.title = t; $('testOut').textContent = t;
+}
+
+/* 容错度批量测试：给 390 个字喂「手抖版」理想笔迹，统计通过率（调阈值时用） */
+function tracebench() {
+  let seed = 20261114;
+  const rnd = () => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; };
+  const jit = (amt) => (rnd() * 2 - 1) * amt;
+  const variants = [
+    {name: 'normal', off: 6, noise: 5, trim: 0.94},
+    {name: 'sloppy', off: 13, noise: 9, trim: 0.86},
+  ];
+  const run = (v) => {
+    let pass = 0;
+    const bad = [];
+    for (const ch of ALL_CHARS) {
+      const d = STROKES[ch]; if (!d) continue;
+      $('traceChar').textContent = ch; setupTrace();
+      const ox = jit(v.off), oy = jit(v.off);
+      for (let i = 0; i < d.m.length && !F.traced; i++) {
+        const sk = d.m[i].map(trXY);
+        const a = sk[0], b = sk[sk.length - 1];
+        const cx = (a[0] + b[0]) / 2, cy = (a[1] + b[1]) / 2;
+        const pts = sk.map(p => [
+          cx + (p[0] - cx) * v.trim + ox + jit(v.noise),
+          cy + (p[1] - cy) * v.trim + oy + jit(v.noise)]);
+        window.__traceFeed(pts);
+      }
+      if (F.traced) pass++; else bad.push(ch);
+    }
+    return {pass, bad};
+  };
+  const out = variants.map(v => ({name: v.name, ...run(v)}));
+  const t = 'TRACEBENCH ' + out.map(o => `${o.name}=${o.pass}/${ALL_CHARS.length} miss=[${o.bad.slice(0, 24).join('')}]`).join(' | ');
+  document.title = t; $('testOut').textContent = t;
+}
+
 function boot() {
   if (qs.has('nofx')) document.body.classList.add('nofx');
   initSky(); updateChips(); bindUI();
   if (qs.has('layout')) layoutDebug();
+  if (qs.has('tracebench')) tracebench();
+  if (qs.has('tracetest')) tracetest();
   if (qs.has('audiotest')) audioTest();
   if (qs.has('echotest')) echotest();
   if (qs.has('autotest')) autotest();

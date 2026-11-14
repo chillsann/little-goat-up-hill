@@ -633,7 +633,7 @@ button.mini.need-rec{opacity:.5;filter:grayscale(.4);cursor:not-allowed;backgrou
               </div>
               <div class="trace-btns">
                 <button class="btn ghost tiny" id="traceDemo">🖌️ 看示范</button>
-                <button class="btn ghost tiny" id="traceClear">🧽 擦掉重写</button>
+                <button class="btn ghost tiny" id="traceClear">🗑️ 擦掉重写</button>
               </div>
             </div>
           </div>
@@ -1490,18 +1490,18 @@ function drawGuide(c, opts) {
   if (!d) return;
   const upTo = opts.upTo == null ? d.s.length : opts.upTo;     /* 示范时只画到第 upTo 笔 */
   const cur = opts.cur == null ? -1 : opts.cur;                /* 当前正在写的这一笔（高亮） */
+  const from = opts.from || 0;                                 /* 已经描过的笔画不再画（进度可见） */
   // 字形模板（淡色）
   guideTransform(g);
-  for (let i = 0; i < upTo; i++) {
-    g.lineJoin = g.lineCap = 'round';
-    g.strokeStyle = (i === cur) ? 'rgba(255,122,47,.95)' : 'rgba(225,170,110,.5)';
-    g.lineWidth = (i === cur) ? 13 : 11;
-    g.beginPath(); g.stroke(new Path2D(d.s[i]));
+  for (let i = from; i < upTo; i++) {
+    /* 笔顺数据里的 s[i] 是笔画的「轮廓」，要填充才是实心字形（描边会变成空心双线） */
+    g.fillStyle = (i === cur) ? 'rgba(255,170,96,.95)' : 'rgba(233,214,178,.95)';
+    g.fill(new Path2D(d.s[i]));
   }
   g.setTransform(1, 0, 0, 1, 0, 0);
   if (!opts.arrows) return;
   // 编号起笔点 + 方向箭头
-  for (let i = 0; i < d.m.length; i++) {
+  for (let i = from; i < d.m.length; i++) {
     const med = d.m[i]; if (!med || !med.length) continue;
     const a = trXY(med[0]);
     let b = med[Math.min(3, med.length - 1)];
@@ -1541,27 +1541,138 @@ function playDemo() {
   traceState.demoTimer = setInterval(step, 420);
 }
 
+/* ---- 笔迹校验：孩子写的一笔 vs 标准笔顺里的这一笔 ----
+   以前只统计「碰过多少格 / 画了多长」，一笔长竖就能填满 6 格，所以画一竖就算完成。
+   现在按标准笔顺逐笔比对：这一笔必须落在标准笔画附近，并且把它的骨架走完才认。 */
+const TR_TOL = 25;                     /* 命中容差（300 画布坐标，约 12px 屏幕） */
+function trDense(pts, step) {          /* 折线加密，避免点太稀导致漏判 */
+  const out = [];
+  if (!pts.length) return out;
+  out.push([pts[0][0], pts[0][1]]);
+  for (let i = 1; i < pts.length; i++) {
+    const x0 = pts[i - 1][0], y0 = pts[i - 1][1], x1 = pts[i][0], y1 = pts[i][1];
+    const n = Math.max(1, Math.ceil(Math.hypot(x1 - x0, y1 - y0) / (step || 5)));
+    for (let k = 1; k <= n; k++) out.push([x0 + (x1 - x0) * k / n, y0 + (y1 - y0) * k / n]);
+  }
+  return out;
+}
+function trNear(pts, x, y, tol) {
+  const t2 = tol * tol;
+  for (let i = 0; i < pts.length; i++) {
+    const dx = pts[i][0] - x, dy = pts[i][1] - y;
+    if (dx * dx + dy * dy <= t2) return true;
+  }
+  return false;
+}
+function scoreStroke(userPts, skel, tol) {
+  const u = trDense(userPts, 5), t = trDense(skel, 5);
+  if (!u.length || !t.length) return {cover: 0, tight: 1};
+  let hit = 0;
+  for (let i = 0; i < t.length; i++) if (trNear(u, t[i][0], t[i][1], tol)) hit++;
+  let back = 0;
+  for (let i = 0; i < u.length; i++) if (trNear(t, u[i][0], u[i][1], tol * 1.6)) back++;
+  return {cover: hit / t.length, tight: back / u.length};
+}
+
 function setupTrace() {
   const cv = $('traceCanvas'), ctx = cv.getContext('2d');
   F.traced = false;                    /* 换字或擦掉重来时，描红进度一并复位 */
-  ctx.clearRect(0, 0, 300, 300);
-  ctx.strokeStyle = 'rgba(225,165,95,.38)'; ctx.lineWidth = 2; ctx.setLineDash([6, 5]);
-  [[150, 0, 150, 300], [0, 150, 300, 150], [0, 0, 300, 300], [300, 0, 0, 300]].forEach(l => {
-    ctx.beginPath(); ctx.moveTo(l[0], l[1]); ctx.lineTo(l[2], l[3]); ctx.stroke();
-  });
-  ctx.setLineDash([]);
   const c = $('traceChar').textContent;
-  traceState.char = c; traceState.strokes = STROKES[c] || null;
+  const d = STROKES[c] || null;
+  traceState.char = c; traceState.strokes = d;
   if (traceState.demoTimer) { clearInterval(traceState.demoTimer); traceState.demoTimer = null; }
-  if (traceState.strokes) {                       /* 有笔顺数据：用引导层，隐藏 DOM 字形 */
+  if (d) {                                         /* 有笔顺数据：用引导层，隐藏 DOM 字形 */
     $('traceChar').classList.add('hide');
-    drawGuide(c, {arrows: true});
   } else {                                         /* 没数据：退回淡色字模板 */
     $('traceChar').classList.remove('hide');
     clearGuide();
   }
-  const cells = new Set();
-  let drawing = false, last = null, done = false, pathLen = 0;
+  const n = d ? d.s.length : 0;
+  const kept = [];                                 /* 已经写对的笔画（重绘用） */
+  const cells = new Set();                         /* 无笔顺数据时的兜底判定 */
+  let drawing = false, last = null, done = false, cur = [];
+  let pathLen = 0, fails = 0;
+
+  const tip = t => { $('traceTip').textContent = t; };
+  const grid = () => {
+    ctx.clearRect(0, 0, 300, 300);
+    ctx.setLineDash([6, 5]); ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(225,165,95,.38)';
+    [[150, 0, 150, 300], [0, 150, 300, 150], [0, 0, 300, 300], [300, 0, 0, 300]].forEach(l => {
+      ctx.beginPath(); ctx.moveTo(l[0], l[1]); ctx.lineTo(l[2], l[3]); ctx.stroke();
+    });
+    ctx.setLineDash([]);
+  };
+  const paint = (pts, color) => {
+    if (pts.length < 2) return;
+    ctx.strokeStyle = color; ctx.lineWidth = 17; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.beginPath(); ctx.moveTo(pts[0].x, pts[0].y);
+    for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+    ctx.stroke();
+  };
+  const redraw = () => { grid(); kept.forEach(s => paint(s, 'rgba(255,155,45,.9)')); };
+  const nextTip = () => {
+    if (!d) { tip('✏️ 用手指把整个字描一遍'); return; }
+    if (kept.length >= n) return;
+    drawGuide(c, {arrows: true, cur: kept.length, from: kept.length});
+    tip(`✏️ 描第 ${kept.length + 1} 笔（一共 ${n} 笔）· 从 ${kept.length + 1} 号圈出发`);
+  };
+  const finishAll = () => {
+    done = true; F.traced = true;
+    if (d) clearGuide();                       /* 全描完就把引导收走，只留孩子自己的笔迹 */
+    SFX.win(); confetti(10);
+    floatText('描得真棒！⭐', innerWidth / 2, innerHeight * .6, '#ffe06a');
+    tip('✅ 全部笔画都描完啦！点下面的「下一个字 →」继续');
+    const nx = $('learnNext');
+    nx.classList.add('glow');
+    setTimeout(() => nx.classList.remove('glow'), 1800);
+  };
+  const okStroke = pts => {
+    kept.push(pts);
+    redraw();
+    if (!d || kept.length >= n) finishAll();
+    else { tone(760, .1, 'sine', .12); nextTip(); }
+  };
+
+  const finish = pts => {
+    drawing = false; last = null;
+    const mine = pts.slice();
+    if (!mine.length || done) return;
+    let len = 0;
+    for (let i = 1; i < mine.length; i++) len += Math.hypot(mine[i].x - mine[i - 1].x, mine[i].y - mine[i - 1].y);
+    if (!d) {                                   /* 兜底：没有笔顺数据时按覆盖面积判 */
+      if (len < 22) return;
+      if (cells.size >= 12 || pathLen >= 560) okStroke(mine); else redraw();
+      return;
+    }
+    const i = kept.length;
+    if (i >= n) { redraw(); return; }
+    const skel = (d.m[i] || []).map(trXY);
+    let skelLen = 0;
+    for (let k = 1; k < skel.length; k++) skelLen += Math.hypot(skel[k][0] - skel[k - 1][0], skel[k][1] - skel[k - 1][1]);
+    const shortTarget = skelLen < 46;            /* 点、短提这种笔画，轻点一下也算 */
+    if (len < 22 && !shortTarget) return;        /* 手抖碰一下，不算一笔 */
+    if (!skel.length) { fails = 0; okStroke(mine); return; }
+    const tol = TR_TOL * Math.min(2.2, 1 + fails * 0.16);
+    const sc = scoreStroke(mine.map(p => [p.x, p.y]), skel, tol);
+    const s0 = skel[0], s1 = skel[skel.length - 1];
+    const dStart = Math.min(Math.hypot(mine[0].x - s0[0], mine[0].y - s0[1]),
+                            Math.hypot(mine[0].x - s1[0], mine[0].y - s1[1]));
+    const minCover = shortTarget ? 0.34 : (fails >= 4 ? 0.42 : 0.58);
+    const minTight = shortTarget ? 0.3 : 0.34;
+    const maxStart = (shortTarget ? 68 : 88) + fails * 10;
+    if (sc.cover >= minCover && sc.tight >= minTight && dStart <= maxStart) {
+      fails = 0;
+      okStroke(mine);
+    } else {
+      fails++;
+      paint(mine, 'rgba(232,86,86,.85)');
+      SFX.wrong();
+      setTimeout(redraw, 520);
+      if (fails === 3) tip(`😊 点「🖌️ 看示范」，看看第 ${i + 1} 笔是怎么写的`);
+      else tip(`😊 这一笔还没描到位置，从 ${i + 1} 号圈开始，顺着箭头再描一遍`);
+    }
+  };
+
   const pos = e => {
     const r = cv.getBoundingClientRect();
     return {x: (e.clientX - r.left) / r.width * 300, y: (e.clientY - r.top) / r.height * 300};
@@ -1570,26 +1681,26 @@ function setupTrace() {
     if (!drawing || done) return;
     e.preventDefault();
     const p = pos(e);
-    ctx.strokeStyle = 'rgba(255,155,45,.9)'; ctx.lineWidth = 17;
-    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-    ctx.beginPath(); ctx.moveTo(last ? last.x : p.x, last ? last.y : p.y); ctx.lineTo(p.x, p.y); ctx.stroke();
-    cells.add(`${Math.floor(p.x / 37.5)},${Math.floor(p.y / 37.5)}`);
-    if (last) pathLen += Math.hypot(p.x - last.x, p.y - last.y);
+    cur.push(p); cells.add(`${Math.floor(p.x / 37.5)},${Math.floor(p.y / 37.5)}`);
+    if (last) { pathLen += Math.hypot(p.x - last.x, p.y - last.y); paint([last, p], 'rgba(255,155,45,.9)'); }
     last = p;
-    /* 描够面积或描够长度都算完成：「一」这种只有一横的字整条画过也只覆盖 7 格 */
-    if ((cells.size >= 6 || pathLen >= 420) && !done) {
-      done = true; F.traced = true;
-      SFX.right(); floatText('描得真棒！⭐', innerWidth / 2, innerHeight * .6, '#ffe06a');
-      $('traceTip').textContent = '✅ 描完啦！点下面的「下一个字 →」继续';
-      const nx = $('learnNext');
-      nx.classList.add('glow');
-      setTimeout(() => nx.classList.remove('glow'), 1800);
-    }
   };
-  cv.onpointerdown = e => { unlockAudio(); drawing = true; last = pos(e); cv.setPointerCapture(e.pointerId); };
+  cv.onpointerdown = e => {
+    unlockAudio(); drawing = true; last = pos(e); cur = [last];
+    cells.clear(); pathLen = 0;
+    cv.setPointerCapture(e.pointerId);
+  };
   cv.onpointermove = move;
-  cv.onpointerup = () => { drawing = false; last = null; };
-  cv.onpointercancel = () => { drawing = false; last = null; };
+  cv.onpointerup = () => { if (drawing) finish(cur); cur = []; };
+  cv.onpointercancel = () => { drawing = false; last = null; cur = []; };
+
+  grid();
+  if (d) drawGuide(c, {arrows: true, cur: 0, from: 0});
+  nextTip();
+
+  /* 自检钩子：喂一条理想笔迹，返回是否已完成（供 ?tracetest=1 使用） */
+  window.__traceFeed = arr => { finish(arr.map(p => ({x: p[0], y: p[1]}))); return F.traced; };
+  window.__traceInfo = () => ({char: c, strokes: n, kept: kept.length, traced: F.traced, fails});
 }
 
 /* ---------------- 绘本自主阅读 ---------------- */
@@ -2241,6 +2352,7 @@ function preview(p) {
     updateChips();
     F.dexFrom = 'home'; renderDex(); show('dex');
   }
+  else if (p === 'trace') openChar(qs.get('char') || '上');
   else if (p === 'parent') { renderParent(); show('parent'); }
   else show('home');
 }
@@ -2439,10 +2551,92 @@ function layoutDebug() {
   }, 900);
 }
 
+/* 直接打开某个字的认字页（调试 / 截图用） */
+function openChar(ch) {
+  let lv = 1, bk = 0, found = false;
+  LEVELS.forEach(L => L.books.forEach((b, i) => {
+    if (!found && b.chars.includes(ch)) { lv = L.level; bk = i; found = true; }
+  }));
+  setLevel(lv); startBook(bk);
+  F.learnIdx = Math.max(0, F.learnChars.indexOf(ch));
+  F.stage = 'learn'; renderLearn(); show('learn');
+}
+
+/* 描红自检：验证「一笔不算完成、逐笔描完才算」以及「乱画不认」 */
+function tracetest() {
+  const errs = [];
+  window.addEventListener('error', e => errs.push(e.message));
+  const ch = qs.get('char') || '上';
+  openChar(ch);
+  const d = STROKES[ch];
+  const n = d ? d.s.length : 0;
+  const feed = pts => window.__traceFeed(pts.map(p => trXY(p)));
+  const clear = () => { $('traceClear').click(); };
+
+  /* ① 只描第 1 笔 → 不能算完成 */
+  clear();
+  if (d && d.m[0]) feed(d.m[0]);
+  const one = window.__traceInfo();
+
+  /* ② 补完剩下的笔画 → 全部完成 */
+  if (n > 1) for (let i = 1; i < n; i++) feed(d.m[i]);
+  const all = window.__traceInfo();
+
+  /* ③ 乱画（左上角随手拐几笔）→ 不能认 */
+  clear();
+  window.__traceFeed([[28, 28], [55, 36], [78, 30], [48, 52]]);
+  const junk = window.__traceInfo();
+
+  const oneOk = n <= 1 ? (one.traced && one.kept === 1) : (!one.traced && one.kept === 1);
+  /* 乱画的目标是「不能靠乱画过关」，短横点有可能落在第一个点的位置上，只看是否被判定完成 */
+  const ok = oneOk && all.traced && all.kept === n && !junk.traced && errs.length === 0;
+  const t = `TRACETEST_${ok ? 'OK' : 'FAIL'} char=${ch} strokes=${n} `
+    + `oneStrokeTraced=${one.traced ? 'YES' : 'no'} kept1=${one.kept} `
+    + `allTraced=${all.traced ? 'yes' : 'NO'} keptAll=${all.kept} `
+    + `junkTraced=${junk.traced ? 'YES' : 'no'} err=${errs.length} ${errs.slice(0, 2).join('|')}`;
+  document.title = t; $('testOut').textContent = t;
+}
+
+/* 容错度批量测试：给 390 个字喂「手抖版」理想笔迹，统计通过率（调阈值时用） */
+function tracebench() {
+  let seed = 20261114;
+  const rnd = () => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; };
+  const jit = (amt) => (rnd() * 2 - 1) * amt;
+  const variants = [
+    {name: 'normal', off: 6, noise: 5, trim: 0.94},
+    {name: 'sloppy', off: 13, noise: 9, trim: 0.86},
+  ];
+  const run = (v) => {
+    let pass = 0;
+    const bad = [];
+    for (const ch of ALL_CHARS) {
+      const d = STROKES[ch]; if (!d) continue;
+      $('traceChar').textContent = ch; setupTrace();
+      const ox = jit(v.off), oy = jit(v.off);
+      for (let i = 0; i < d.m.length && !F.traced; i++) {
+        const sk = d.m[i].map(trXY);
+        const a = sk[0], b = sk[sk.length - 1];
+        const cx = (a[0] + b[0]) / 2, cy = (a[1] + b[1]) / 2;
+        const pts = sk.map(p => [
+          cx + (p[0] - cx) * v.trim + ox + jit(v.noise),
+          cy + (p[1] - cy) * v.trim + oy + jit(v.noise)]);
+        window.__traceFeed(pts);
+      }
+      if (F.traced) pass++; else bad.push(ch);
+    }
+    return {pass, bad};
+  };
+  const out = variants.map(v => ({name: v.name, ...run(v)}));
+  const t = 'TRACEBENCH ' + out.map(o => `${o.name}=${o.pass}/${ALL_CHARS.length} miss=[${o.bad.slice(0, 24).join('')}]`).join(' | ');
+  document.title = t; $('testOut').textContent = t;
+}
+
 function boot() {
   if (qs.has('nofx')) document.body.classList.add('nofx');
   initSky(); updateChips(); bindUI();
   if (qs.has('layout')) layoutDebug();
+  if (qs.has('tracebench')) tracebench();
+  if (qs.has('tracetest')) tracetest();
   if (qs.has('audiotest')) audioTest();
   if (qs.has('echotest')) echotest();
   if (qs.has('autotest')) autotest();
